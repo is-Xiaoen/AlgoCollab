@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "Running lint-staged on staged files..."
+npx lint-staged
+
+# 检查 lint-staged 是否成功
+if [ $? -ne 0 ]; then
+  echo "Lint-staged failed. Aborting commit."
+  exit 1
+fi
+
+echo "Lint-staged passed. Running tests..."
+pnpm test
+
+# 检查测试是否成功
+if [ $? -ne 0 ]; then
+  echo "Tests failed. Aborting commit."
+  exit 1
+fi
+
+echo "All checks passed. Commit successful!"
