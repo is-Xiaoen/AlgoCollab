@@ -1,0 +1,54 @@
+# Air 热重载配置文件
+# 用于开发环境的自动重启
+
+root = "."
+testdata_dir = "testdata"
+tmp_dir = "tmp"
+
+[build]
+  # 构建命令
+  cmd = "go build -o ./tmp/main.exe ./cmd/server"
+  # 二进制文件位置
+  bin = "tmp\\main.exe"
+  # 自定义二进制运行参数
+  full_bin = "tmp\\main.exe"
+  # 监听的文件扩展名
+  include_ext = ["go", "tpl", "tmpl", "html", "yaml", "yml", "toml", "env"]
+  # 排除的文件和目录
+  exclude_dir = ["assets", "tmp", "vendor", "testdata", "docs", "scripts", "deployments", ".git", ".idea", "logs", "storage"]
+  # 监听的目录
+  include_dir = []
+  # 排除的文件
+  exclude_file = []
+  # 排除的正则表达式
+  exclude_regex = ["_test.go"]
+  # 忽略未修改的文件
+  exclude_unchanged = false
+  # 符号链接
+  follow_symlink = false
+  # 轮询间隔（毫秒）
+  poll_interval = 0
+  # 构建延迟（毫秒）
+  delay = 1000
+  # 停止命令
+  stop_on_error = true
+  # 发送中断信号前的延迟
+  send_interrupt = false
+  # 中断信号延迟（毫秒）
+  kill_delay = 500
+
+[log]
+  # 显示时间
+  time = true
+
+[color]
+  # 自定义颜色
+  main = "magenta"
+  watcher = "cyan"
+  build = "yellow"
+  runner = "green"
+  app = ""
+
+[misc]
+  # 是否在退出时清理临时目录
+  clean_on_exit = true

@@ -1,0 +1,91 @@
+# ===========================
+# Go 项目忽略文件
+# ===========================
+
+# 二进制文件
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/bin/
+/dist/
+
+# 测试文件
+*.test
+*.out
+coverage.txt
+coverage.html
+.coverage/
+
+# Go 依赖和缓存
+/vendor/
+go.sum
+
+# 环境变量和配置
+.env
+.env.local
+.env.*.local
+*.env
+!.env.example
+
+# 日志文件
+*.log
+logs/
+*.log.*
+
+# 临时文件
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# IDE 配置
+.idea/
+.vscode/
+*.iml
+.project
+.classpath
+.settings/
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+
+# 上传文件和存储
+/storage/
+/uploads/
+/tmp/
+
+# Docker
+docker-compose.override.yml
+.docker/
+
+# 构建产物
+/build/
+/release/
+
+# 文档生成
+/docs/swagger/
+*.swagger.json
+*.swagger.yaml
+
+# 监控和分析
+*.prof
+*.pprof
+*.trace
+
+# 本地开发
+.local/
+.cache/
+
+# 敏感信息
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
