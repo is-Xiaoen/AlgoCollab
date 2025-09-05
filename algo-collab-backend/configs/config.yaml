@@ -31,6 +31,10 @@ log:
   format: "console"          # 输出格式：console（开发）或 json（生产）
   output: "stdout"           # 输出位置：stdout 或 file
   file_path: "./logs/app.log" # 日志文件路径（当output为file时使用）
+  max_size: 100        # 单个日志文件最大大小(MB)
+  max_backups: 30      # 保留旧日志文件数量
+  max_age: 7           # 保留旧日志文件天数
+  compress: true       # 是否压缩旧日志
 
 cors:
   allow_origins: ["http://localhost:3000", "http://localhost:5173"]  # 允许的前端地址
