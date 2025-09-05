@@ -1,0 +1,41 @@
+app:
+  name: "AlgoCollab"        # 应用名称
+  env: "development"         # 环境标识：开发/测试/生产
+  port: 8080                 # HTTP服务端口
+  debug: true                # 是否开启调试模式
+
+database:
+  driver: "postgres"
+  host: "localhost"
+  port: 5432
+  username: "algocollab"
+  password: "algocollab123"  # 数据库密码（生产环境用环境变量）
+  database: "algocollab_db"  # 数据库名
+  max_idle_conns: 10         # 空闲连接池大小
+  max_open_conns: 100        # 最大连接数
+
+redis:
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+  pool_size: 10
+
+jwt:
+  secret: "Xiao-en-secret"  # 签名密钥（生产环境必须改！）
+  expire_hours: 24           # token过期时间（小时）
+  refresh_expire_hours: 168  # 刷新token过期时间（7天）
+
+log:
+  level: "debug"             # 日志级别：debug < info < warn < error
+  format: "console"          # 输出格式：console（开发）或 json（生产）
+  output: "stdout"           # 输出位置：stdout 或 file
+  file_path: "./logs/app.log" # 日志文件路径（当output为file时使用）
+
+cors:
+  allow_origins: ["http://localhost:3000", "http://localhost:5173"]  # 允许的前端地址
+  allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]         # 允许的HTTP方法
+  allow_headers: ["Content-Type", "Authorization"]                   # 允许的请求头
+  expose_headers: ["Content-Length"]                                 # 暴露给前端的响应头
+  allow_credentials: true    # 是否允许携带cookie
+  max_age: 86400            # 预检请求缓存时间（秒）

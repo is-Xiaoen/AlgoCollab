@@ -1,0 +1,35 @@
+# .air.toml
+# Air 热重载配置文件
+
+root = "."
+tmp_dir = "tmp"
+
+[build]
+    # 编译命令
+    cmd = "go build -o ./tmp/main cmd/server/main.go"
+    # 二进制文件位置
+    bin = "tmp/main"
+    # 监听文件扩展名
+    include_ext = ["go", "yaml", "yml"]
+    # 排除目录
+    exclude_dir = ["assets", "tmp", "vendor", "node_modules"]
+    # 排除文件
+    exclude_file = []
+    # 延迟重建（毫秒）
+    delay = 1000
+    # 停止旧进程的信号
+    stop_on_error = true
+    # 发送中断信号前的等待时间
+    kill_delay = 500
+
+[log]
+    # 显示时间
+    time = true
+
+[color]
+    # 彩色输出
+    main = "cyan"
+    watcher = "magenta"
+    build = "yellow"
+    runner = "green"
+    app = "white"
