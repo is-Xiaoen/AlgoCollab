@@ -11,11 +11,15 @@
     "prepare": "husky"
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.2.1",
+    "antd": "^5.27.3",
     "axios": "^1.11.0",
     "classname": "^0.0.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
+    "react-hook-form": "^7.62.0",
     "react-router-dom": "^7.8.2",
+    "zod": "^4.1.5",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
