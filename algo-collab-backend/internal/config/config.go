@@ -22,7 +22,7 @@ type Config struct {
 type AppConfig struct {
 	Name  string `mapstructure:"name"`
 	Env   string `mapstructure:"env"`
-	Port  string `mapstructure:"port"`
+	Port  int    `mapstructure:"port"`
 	Debug bool   `mapstructure:"debug"`
 }
 
