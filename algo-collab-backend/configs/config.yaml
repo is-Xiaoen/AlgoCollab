@@ -1,151 +1,41 @@
-# 应用基础配置
 app:
-  name: AlgoCollab
-  version: 1.0.0
-  mode: development  # development, test, production
-  port: 8080
-  
-# 服务器配置
-server:
-  read_timeout: 30s
-  write_timeout: 30s
-  idle_timeout: 120s
-  max_header_bytes: 1048576  # 1MB
-  shutdown_timeout: 10s
-  
-# 数据库配置
+  name: "AlgoCollab"        # 应用名称
+  env: "development"         # 环境标识：开发/测试/生产
+  port: 8080                 # HTTP服务端口
+  debug: true                # 是否开启调试模式
+
 database:
-  driver: postgres
-  host: localhost
+  driver: "postgres"
+  host: "localhost"
   port: 5432
-  name: algocollab
-  user: algocollab_user
-  password: ${DB_PASSWORD}
-  ssl_mode: disable
-  max_idle_conns: 10
-  max_open_conns: 100
-  conn_max_lifetime: 1h
-  log_level: info
-  
-# Redis 配置
+  username: "algocollab"
+  password: "algocollab123"  # 数据库密码（生产环境用环境变量）
+  database: "algocollab_db"  # 数据库名
+  max_idle_conns: 10         # 空闲连接池大小
+  max_open_conns: 100        # 最大连接数
+
 redis:
-  host: localhost
+  host: "localhost"
   port: 6379
   password: ""
   db: 0
-  pool_size: 100
-  min_idle_conns: 10
-  dial_timeout: 5s
-  read_timeout: 3s
-  write_timeout: 3s
-  pool_timeout: 4s
-  idle_timeout: 5m
-  
-# JWT 认证配置
+  pool_size: 10
+
 jwt:
-  secret: ${JWT_SECRET}
-  issuer: algocollab
-  expire_hours: 24
-  refresh_expire_hours: 168  # 7 days
-  
-# 日志配置
+  secret: "Xiao-en-secret"  # 签名密钥（生产环境必须改！）
+  expire_hours: 24           # token过期时间（小时）
+  refresh_expire_hours: 168  # 刷新token过期时间（7天）
+
 log:
-  level: debug  # debug, info, warn, error
-  format: json  # json, console
-  output: both  # console, file, both
-  file_path: logs/app.log
-  max_size: 100  # MB
-  max_backups: 10
-  max_age: 30  # days
-  compress: true
-  
-# CORS 配置
+  level: "debug"             # 日志级别：debug < info < warn < error
+  format: "console"          # 输出格式：console（开发）或 json（生产）
+  output: "stdout"           # 输出位置：stdout 或 file
+  file_path: "./logs/app.log" # 日志文件路径（当output为file时使用）
+
 cors:
-  allow_origins:
-    - http://localhost:3000
-    - http://localhost:5173
-  allow_methods:
-    - GET
-    - POST
-    - PUT
-    - DELETE
-    - OPTIONS
-    - PATCH
-  allow_headers:
-    - Origin
-    - Content-Type
-    - Accept
-    - Authorization
-    - X-Request-ID
-  expose_headers:
-    - Content-Length
-    - X-Request-ID
-  allow_credentials: true
-  max_age: 3600
-  
-# WebSocket 配置
-websocket:
-  read_buffer_size: 1024
-  write_buffer_size: 1024
-  max_message_size: 512000  # 500KB
-  pong_wait: 60s
-  ping_period: 54s
-  write_wait: 10s
-  
-# 文件上传配置
-upload:
-  max_size: 10485760  # 10MB
-  allowed_types:
-    - image/jpeg
-    - image/png
-    - image/gif
-    - text/plain
-    - application/pdf
-    - application/zip
-  save_path: ./uploads
-  
-# 代码执行配置
-code_runner:
-  endpoint: http://localhost:9000
-  timeout: 30s
-  max_memory: 512  # MB
-  max_cpu_time: 10  # seconds
-  supported_languages:
-    - python
-    - javascript
-    - go
-    - java
-    - cpp
-    
-# 限流配置
-rate_limit:
-  enabled: true
-  requests_per_minute: 60
-  burst: 10
-  
-# 监控配置
-metrics:
-  enabled: true
-  port: 9090
-  path: /metrics
-  
-# 邮件配置
-email:
-  smtp_host: smtp.example.com
-  smtp_port: 587
-  username: ${SMTP_USER}
-  password: ${SMTP_PASSWORD}
-  from: noreply@algocollab.com
-  from_name: AlgoCollab
-  
-# 缓存配置
-cache:
-  default_expiration: 5m
-  cleanup_interval: 10m
-  
-# 安全配置
-security:
-  bcrypt_cost: 10
-  session_timeout: 30m
-  max_login_attempts: 5
-  lockout_duration: 15m
+  allow_origins: ["http://localhost:3000", "http://localhost:5173"]  # 允许的前端地址
+  allow_methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"]         # 允许的HTTP方法
+  allow_headers: ["Content-Type", "Authorization"]                   # 允许的请求头
+  expose_headers: ["Content-Length"]                                 # 暴露给前端的响应头
+  allow_credentials: true    # 是否允许携带cookie
+  max_age: 86400            # 预检请求缓存时间（秒）
