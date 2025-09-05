@@ -3,10 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
+	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/is-Xiaoen/algo-collab/internal/config"
 	"github.com/is-Xiaoen/algo-collab/internal/database"
-	"github.com/is-Xiaoen/algo-collab/internal/models"
+	"github.com/is-Xiaoen/algo-collab/internal/middleware"
+	"github.com/is-Xiaoen/algo-collab/pkg/logger"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -16,39 +20,51 @@ func main() {
 		log.Fatalf("加载配置失败: %v", err)
 	}
 
-	fmt.Println("✅ 配置加载成功")
+	// 2. 初始化日志
+	if err := logger.Init(&config.GlobalConfig.Log); err != nil {
+		log.Fatalf("初始化日志失败: %v", err)
+	}
+	defer logger.Sync()
 
-	// 2. 连接数据库
+	logger.Info("🚀 服务启动中...",
+		zap.String("env", config.GlobalConfig.App.Env),
+		zap.Int("port", config.GlobalConfig.App.Port),
+	)
+
+	// 3. 连接数据库
 	err = database.Init(&config.GlobalConfig.Database)
 	if err != nil {
-		log.Fatalf("数据库连接失败: %v", err)
+		logger.Fatal("数据库连接失败", zap.Error(err))
 	}
 	defer database.Close()
 
-	// 3. 自动迁移
-	err = database.AutoMigrate()
-	if err != nil {
-		log.Fatalf("数据库迁移失败: %v", err)
+	// 4. 初始化 Gin
+	if config.GlobalConfig.App.Env == "production" {
+		gin.SetMode(gin.ReleaseMode)
 	}
 
-	// 4. 测试创建用户
-	testUser := &models.User{
-		Username:     "testuser",
-		Email:        "test@example.com",
-		PasswordHash: "hashed_password_here",
-		Role:         "user",
-		Status:       "active",
+	router := gin.New()
+	// 5. 应用中间件
+	router.Use(
+		middleware.LoggerMiddleware(),
+		middleware.RecoveryMiddleware(),
+		middleware.CORSMiddleware(&config.GlobalConfig.CORS),
+	)
+
+	// 6. 测试路由
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "healthy",
+			"message": "AlgoCollab Backend is running",
+		})
+	})
+
+	// 7. 启动服务器
+	addr := fmt.Sprintf(":%d", config.GlobalConfig.App.Port)
+	logger.Info("✅ 服务器启动成功", zap.String("address", addr))
+
+	if err := router.Run(addr); err != nil {
+		logger.Fatal("服务器启动失败", zap.Error(err))
 	}
 
-	result := database.DB.Create(testUser)
-	if result.Error != nil {
-		log.Printf("创建用户失败: %v", result.Error)
-	} else {
-		fmt.Printf("✅ 创建测试用户成功，ID: %d\n", testUser.ID)
-	}
-
-	// 5. 查询用户
-	var users []models.User
-	database.DB.Find(&users)
-	fmt.Printf("📊 数据库中有 %d 个用户\n", len(users))
 }
