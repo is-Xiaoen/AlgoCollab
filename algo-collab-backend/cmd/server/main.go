@@ -38,6 +38,12 @@ func main() {
 	}
 	defer database.Close()
 
+	// 初始化 Redis
+	if err := database.InitRedis(&config.GlobalConfig.Redis); err != nil {
+		logger.Fatal("Redis 连接失败", zap.Error(err))
+	}
+	defer database.CloseRedis()
+
 	// 4. 初始化 Gin
 	if config.GlobalConfig.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)

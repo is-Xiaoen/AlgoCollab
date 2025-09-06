@@ -15,6 +15,7 @@ type UserRepository interface {
 	Update(ctx context.Context, user *models.User) error
 	ExistsByEmail(ctx context.Context, email string) (bool, error)
 	ExistsByUsername(ctx context.Context, username string) (bool, error)
+	FindByUUID(ctx context.Context, uuid string) (*models.User, error)
 }
 
 type userRepository struct {
@@ -70,4 +71,13 @@ func (r *userRepository) ExistsByUsername(ctx context.Context, username string) 
 	var count int64
 	err := r.db.WithContext(ctx).Model(&models.User{}).Where("username = ?", username).Count(&count).Error
 	return count > 0, err
+}
+
+func (r *userRepository) FindByUUID(ctx context.Context, uuid string) (*models.User, error) {
+	var user models.User
+	err := r.db.WithContext(ctx).Where("uuid = ?", uuid).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
