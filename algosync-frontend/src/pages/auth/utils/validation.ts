@@ -91,12 +91,15 @@ export const getPasswordStrengthErrors = (password: string): string[] => {
   if (password.length < 8) {
     errors.push('至少8个字符');
   }
+
   if (!/[A-Z]/.test(password)) {
     errors.push('至少一个大写字母');
   }
+
   if (!/[a-z]/.test(password)) {
     errors.push('至少一个小写字母');
   }
+  
   if (!/[0-9]/.test(password)) {
     errors.push('至少一个数字');
   }

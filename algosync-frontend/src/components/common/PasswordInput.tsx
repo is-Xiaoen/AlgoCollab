@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+
+//定义接口的传入类型
 interface PasswordInputProps {
   label: string;
   name: string;
@@ -22,7 +24,6 @@ const calculatePasswordStrength = (password: string): {
   color: string;
 } => {
   let score = 0;
-  
   if (!password) return { score: 0, label: '无', color: 'gray' };
   
   // 长度评分
