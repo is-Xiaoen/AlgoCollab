@@ -56,8 +56,8 @@ const FormField: React.FC<FormFieldProps> = ({
         disabled={disabled}
         autoFocus={autoFocus}
         autoComplete={autoComplete}
-        aria-invalid={hasError?'true':'false'}
-        aria-describedby={hasError ? `${name}-error` : undefined}
+        {...(hasError && { 'aria-invalid': 'true' })}
+        {...(hasError && { 'aria-describedby': `${name}-error` })}
         className={`
           w-full px-3 py-2 border rounded-md shadow-sm
           focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
@@ -74,7 +74,6 @@ const FormField: React.FC<FormFieldProps> = ({
           {error}
         </p>
       )}
-
     </div>
   );
 };

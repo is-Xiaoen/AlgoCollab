@@ -86,8 +86,8 @@ const PasswordInput: React.FC<PasswordInputProps> = ({
           onBlur={onBlur}
           disabled={disabled}
           autoComplete={autoComplete}
-          aria-invalid={hasError ? "true" : undefined}
-          aria-describedby={hasError ? `${name}-error` : undefined}
+          {...(hasError && { 'aria-invalid': 'true' })}
+          {...(hasError && { 'aria-describedby': `${name}-error` })}
           className={`
             w-full px-3 py-2 pr-10 border rounded-md shadow-sm
             focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
