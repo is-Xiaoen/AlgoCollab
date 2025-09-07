@@ -57,7 +57,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
     }
   };
 
-  // handleBlur - 处理字段失焦，设置touched状态并验证
   const handleBlur = (field: keyof LoginFormData) => () => {
     // 表示用户已经与该字段交互过
     setTouched(prev => ({
@@ -85,19 +84,17 @@ const LoginForm: React.FC<LoginFormProps> = ({
       }
     }
   };
-
+  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       setIsSubmitting(true);
       const validatedData = loginSchema.parse(formData);
       setErrors({});
-      
       // 4. 调用提交回调（如果提供）
       if (onSubmit) {
         await onSubmit(validatedData);
       }
-      
       resetForm(); // 完全重置表单
       setTouched({}); // 重置 touched 状态
       setFormData(prev => ({ ...prev, password: '' }));

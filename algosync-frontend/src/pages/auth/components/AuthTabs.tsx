@@ -174,15 +174,12 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
   useEffect(() => {
     // 初始化时设置指示器位置
     updateIndicatorPosition(activeTab);
-    
     // 处理窗口大小变化
     const handleResize = () => {
       updateIndicatorPosition(activeTab);
     };
-    
     // 添加事件监听器
     window.addEventListener('resize', handleResize);
-    
     // 清理函数：移除事件监听器
     return () => {
       window.removeEventListener('resize', handleResize);
@@ -476,12 +473,12 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
                   backfaceVisibility: 'hidden'
                 }}
               >
-                {/* 内容淡入效果 */}
                 <div className={`
                   transition-opacity duration-300
                   ${isActive ? 'opacity-100 delay-200' : 'opacity-0'}
                 `}>
-                  {children[tab.key]}
+                  {/* 通过key来渲染不同的内容，这里的children是传入的组件对象， */}
+                  {children[tab.key]} 
                 </div>
               </div>
             );
