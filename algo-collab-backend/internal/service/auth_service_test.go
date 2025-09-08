@@ -2,14 +2,30 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/is-Xiaoen/algo-collab/internal/config"
 	"github.com/is-Xiaoen/algo-collab/internal/models"
+	"github.com/is-Xiaoen/algo-collab/pkg/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// 初始化测试环境
+func init() {
+	// 初始化logger，使用开发环境配置
+	logConfig := &config.LogConfig{
+		Level:    "debug",
+		Format:   "console",
+		Output:   "stdout",
+		FilePath: "",
+	}
+	if err := logger.Init(logConfig); err != nil {
+		panic("初始化logger失败: " + err.Error())
+	}
+}
 
 // MockUserRepository 模拟用户仓库
 type MockUserRepository struct {
@@ -243,7 +259,7 @@ func TestAuthService_Login(t *testing.T) {
 			},
 			mockSetup: func(m *MockUserRepository) {
 				// 设置Mock行为
-				m.On("FindByEmail", mock.Anything, "test1@example.com").Return(nil, nil)
+				m.On("FindByEmail", mock.Anything, "test1@example.com").Return(nil, fmt.Errorf(""))
 			},
 			wantErr: true,
 			errMsg:  "邮箱或密码错误",
@@ -252,10 +268,11 @@ func TestAuthService_Login(t *testing.T) {
 			name: "密码错误",
 			req: &LoginRequest{
 				Email:    "test@example.com",
-				Password: "Test12345!",
+				Password: "WrongPassword123!",
 			},
 			mockSetup: func(m *MockUserRepository) {
-				// 不会调用任何repository方法
+				// 需要返回用户，但密码不匹配
+				m.On("FindByEmail", mock.Anything, "test@example.com").Return(testUser, nil)
 			},
 			wantErr: true,
 			errMsg:  "邮箱或密码错误",
@@ -267,7 +284,16 @@ func TestAuthService_Login(t *testing.T) {
 				Password: "Test1234!",
 			},
 			mockSetup: func(m *MockUserRepository) {
-				// 不会调用任何repository方法
+				// 创建一个被禁用的用户
+				disabledUser := &models.User{
+					Username:     "disabled",
+					Email:        "test2@example.com",
+					PasswordHash: string(hashedPassword),
+					Status:       "inactive", // 账号被禁用
+					Role:         "user",
+					UUID:         "disabled-uuid",
+				}
+				m.On("FindByEmail", mock.Anything, "test2@example.com").Return(disabledUser, nil)
 			},
 			wantErr: true,
 			errMsg:  "账号已被禁用",
