@@ -5,10 +5,10 @@ import (
 )
 
 // Success 成功响应
-func Success(c *gin.Context, data interface{}) {
+func Success(c *gin.Context, message string, data interface{}) {
 	c.JSON(200, gin.H{
 		"code":    0,
-		"message": "success",
+		"message": message,
 		"data":    data,
 	})
 }
@@ -28,5 +28,13 @@ func ErrorWithData(c *gin.Context, httpCode int, bizCode int, message string, da
 		"code":    bizCode,
 		"message": message,
 		"data":    data,
+	})
+}
+
+// Unauthorized 未授权
+func Unauthorized(c *gin.Context, message string) {
+	c.JSON(200, gin.H{
+		"code":    401,
+		"message": message,
 	})
 }
