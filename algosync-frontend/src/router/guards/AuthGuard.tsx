@@ -67,7 +67,7 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
   
   // 已登录但访问登录页，重定向到首页
   if (!requireAuth && isAuthenticated) {
-    const from = location.state?.from || '/dashboard';
+    const from = location.state?.from || '/home';
     return <Navigate to={from} replace />;
   }
   

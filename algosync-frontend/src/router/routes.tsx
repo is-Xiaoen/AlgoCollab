@@ -5,7 +5,7 @@ import PublicGuard from './guards/PublicGuard';
 import { Navigate } from 'react-router-dom';
 // 懒加载组件
 const AuthPage = lazy(() => import('../pages/auth'));
-const Dashboard = lazy(() => import('../pages/dashboard'));
+const Home = lazy(() => import('../pages/layout'));
 const NotFound = lazy(() => import('../pages/404'));
 
 // Loading 组件
@@ -22,7 +22,7 @@ const PageLoader = () => (
 export const routes: RouteObject[] = [
   {
     path: '/',
-    element: <Navigate to="/dashboard" replace />,
+    element: <Navigate to="/home" replace />,
   },
   {
     path: '/login',
@@ -45,11 +45,11 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: '/dashboard',
+    path: '/home',
     element: (
       <AuthGuard>
         <Suspense fallback={<PageLoader />}>
-          <Dashboard />
+          <Home />
         </Suspense>
       </AuthGuard>
     ),
