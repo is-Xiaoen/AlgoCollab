@@ -8,6 +8,7 @@ import (
 	"github.com/is-Xiaoen/algo-collab/internal/models"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // MockUserRepository 模拟用户仓库
@@ -201,3 +202,107 @@ func TestAuthService_Register(t *testing.T) {
 //    - 用户不存在（FindByEmail返回error）
 //    - 密码错误（PasswordHash不匹配）
 //    - 账号被禁用（Status != "active"）
+
+func TestAuthService_Login(t *testing.T) {
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("Test1234!"), bcrypt.DefaultCost)
+	testUser := &models.User{
+		Username:     "testuser",
+		Email:        "test@example.com",
+		PasswordHash: string(hashedPassword),
+		Status:       "active",
+		Role:         "user",
+		UUID:         "test-uuid",
+	}
+
+	// 表格驱动测试
+	tests := []struct {
+		name      string                    // 测试用例名称
+		req       *LoginRequest             // 输入参数
+		mockSetup func(*MockUserRepository) // Mock设置
+		wantErr   bool                      // 期望是否出错
+		errMsg    string                    // 期望的错误信息
+	}{
+		{
+			name: "成功登录",
+			req: &LoginRequest{
+				Email:    "test@example.com",
+				Password: "Test1234!",
+			},
+			mockSetup: func(m *MockUserRepository) {
+				// 设置Mock行为
+				m.On("FindByEmail", mock.Anything, "test@example.com").Return(testUser, nil)
+				m.On("Update", mock.Anything, testUser).Return(nil)
+			},
+			wantErr: false,
+		},
+		{
+			name: "用户不存在",
+			req: &LoginRequest{
+				Email:    "test1@example.com",
+				Password: "Test1234!",
+			},
+			mockSetup: func(m *MockUserRepository) {
+				// 设置Mock行为
+				m.On("FindByEmail", mock.Anything, "test1@example.com").Return(nil, nil)
+			},
+			wantErr: true,
+			errMsg:  "邮箱或密码错误",
+		},
+		{
+			name: "密码错误",
+			req: &LoginRequest{
+				Email:    "test@example.com",
+				Password: "Test12345!",
+			},
+			mockSetup: func(m *MockUserRepository) {
+				// 不会调用任何repository方法
+			},
+			wantErr: true,
+			errMsg:  "邮箱或密码错误",
+		},
+		{
+			name: "账号被禁用",
+			req: &LoginRequest{
+				Email:    "test2@example.com",
+				Password: "Test1234!",
+			},
+			mockSetup: func(m *MockUserRepository) {
+				// 不会调用任何repository方法
+			},
+			wantErr: true,
+			errMsg:  "账号已被禁用",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// 1.创建Mock对象
+			mockRepo := new(MockUserRepository)
+			tt.mockSetup(mockRepo)
+
+			// 2. 创建被测试的服务
+			service := NewAuthService(mockRepo, &config.JWTConfig{
+				Secret:             "test-secret-key-for-testing",
+				ExpireHours:        24,
+				RefreshExpireHours: 24 * 7,
+			})
+
+			// 3.执行测试
+			resp, err := service.Login(context.Background(), tt.req)
+
+			// 4. 断言结果
+			if tt.wantErr {
+				assert.Error(t, err)
+				if tt.errMsg != "" {
+					assert.EqualError(t, err, tt.errMsg)
+				}
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
+				assert.NotEmpty(t, resp.AccessToken)
+			}
+
+			// 5. 验证Mock调用
+			mockRepo.AssertExpectations(t)
+		})
+	}
+}
