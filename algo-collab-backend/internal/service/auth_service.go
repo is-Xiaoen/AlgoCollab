@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"regexp"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -24,6 +25,7 @@ type AuthService interface {
 	RefreshToken(ctx context.Context, refreshToken string) (*AuthResponse, error)
 	Logout(ctx context.Context, token string) error
 	ValidateToken(token string) (*Claims, error)
+	BlacklistToken(ctx context.Context, JTI string, expiration time.Duration) error
 }
 
 type authService struct {
@@ -67,27 +69,72 @@ func NewAuthService(userRepo repository.UserRepository, cfg *config.JWTConfig) A
 	}
 }
 
+// 预编译正则表达式，避免每次校验都重新编译，大大提高性能
+// regexp.MustCompile 会在编译失败时 panic，这在初始化阶段是合理的，因为正则表达式是固定的
+var emailRegex = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
+
+// IsValidEmailOptimized 使用预编译的正则表达式进行校验
+func IsValidEmailOptimized(email string) bool {
+	return emailRegex.MatchString(email)
+}
+
+// validatePassword 验证密码强度
+func validatePassword(password string) error {
+	if len(password) < 8 {
+		return errors.New("密码长度至少8位")
+	}
+
+	var hasUpper, hasLower, hasDigit bool
+	for _, char := range password {
+		switch {
+		case 'A' <= char && char <= 'Z':
+			hasUpper = true
+		case 'a' <= char && char <= 'z':
+			hasLower = true
+		case '0' <= char && char <= '9':
+			hasDigit = true
+		}
+	}
+
+	if !hasUpper || !hasLower || !hasDigit {
+		return errors.New("密码必须包含大小写字母和数字")
+	}
+	return nil
+}
+
 // Register 用户注册
 func (s *authService) Register(ctx context.Context, req *RegisterRequest) (*AuthResponse, error) {
-	// 1. 检查邮箱是否已存在
+	// 1. 验证邮箱格式
+	if !IsValidEmailOptimized(req.Email) {
+		return nil, errors.New("邮箱格式不正确")
+	}
+
+	// 2. 验证密码强度
+	if err := validatePassword(req.Password); err != nil {
+		return nil, err
+	}
+
+	// 3. 检查邮箱是否已存在
 	exists, err := s.userRepo.ExistsByEmail(ctx, req.Email)
 	if err != nil {
-		return nil, err
+		logger.Error("检查邮箱失败", zap.Error(err))
+		return nil, errors.New("注册失败，请稍后重试")
 	}
 	if exists {
 		return nil, errors.New("邮箱已被注册")
 	}
 
-	// 2. 检查用户名是否已存在
+	// 4. 检查用户名是否已存在
 	exists, err = s.userRepo.ExistsByUsername(ctx, req.Username)
 	if err != nil {
-		return nil, err
+		logger.Error("检查用户名失败", zap.Error(err))
+		return nil, errors.New("注册失败，请稍后重试")
 	}
 	if exists {
 		return nil, errors.New("用户名已被占用")
 	}
 
-	// 3. 密码加密
+	// 5. 密码加密
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
@@ -326,15 +373,8 @@ func (s *authService) Logout(ctx context.Context, token string) error {
 
 	// 第三步：将 Token 的 JTI 加入黑名单
 	// JTI (JWT ID) 是 Token 的唯一标识符
-	blacklistKey := fmt.Sprintf("jwt:blacklist:%s", claims.ID)
-
-	// 使用 Redis 的 SET 命令，同时设置过期时间
-	err = database.SetWithExpiration(ctx, blacklistKey, "1", expiration)
+	err = s.BlacklistToken(ctx, claims.ID, expiration)
 	if err != nil {
-		logger.Error("添加黑名单失败",
-			zap.String("jti", claims.ID),
-			zap.Error(err),
-		)
 		return err
 	}
 
@@ -344,5 +384,21 @@ func (s *authService) Logout(ctx context.Context, token string) error {
 		zap.String("jti", claims.ID),
 	)
 
+	return nil
+}
+
+// BlacklistToken ：将Token JTI加入Redis黑名单
+func (s *authService) BlacklistToken(ctx context.Context, JTI string, expiration time.Duration) error {
+	blacklistKey := fmt.Sprintf("jwt:blacklist:%s", JTI)
+
+	// 使用 Redis 的 SET 命令，同时设置过期时间
+	err := database.SetWithExpiration(ctx, blacklistKey, "1", expiration)
+	if err != nil {
+		logger.Error("添加黑名单失败",
+			zap.String("jti", JTI),
+			zap.Error(err),
+		)
+		return err
+	}
 	return nil
 }
