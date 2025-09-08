@@ -10,6 +10,9 @@ export default {
         'checkmark': 'checkmark 200ms ease-in-out',
         'fade-in': 'fadeIn 200ms ease-in-out',
         'blink': 'blink 1.4s infinite',
+        'fadeIn': 'fadeIn 300ms ease-in-out',
+        'slideDown': 'slideDown 200ms ease-out',
+        'slideUp': 'slideUp 200ms ease-out',
       },
       keyframes: {
         checkmark: {
@@ -41,6 +44,26 @@ export default {
             opacity: '0'
           },
           '50%': { 
+            opacity: '1'
+          },
+        },
+        slideDown: {
+          '0%': { 
+            transform: 'translateY(-10px)',
+            opacity: '0'
+          },
+          '100%': { 
+            transform: 'translateY(0)',
+            opacity: '1'
+          },
+        },
+        slideUp: {
+          '0%': { 
+            transform: 'translateY(10px)',
+            opacity: '0'
+          },
+          '100%': { 
+            transform: 'translateY(0)',
             opacity: '1'
           },
         },

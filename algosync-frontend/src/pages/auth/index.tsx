@@ -16,7 +16,7 @@ const AuthPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(defaultTab);
   
   // 获取重定向路径
-  const from = location.state?.from || '/dashboard';
+  const from = location.state?.from || '/home';
   
   // 初始化时检查是否有记住的邮箱
   React.useEffect(() => {

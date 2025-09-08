@@ -430,7 +430,6 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   checkAuth: () => void;
@@ -537,7 +536,7 @@ export function ProtectedRoute({
 export const routes = [
   {
     path: '/',
-    element: <Layout />,
+    element: <Home />,
     children: [
       {
         index: true,
@@ -576,11 +575,7 @@ export const routes = [
   {
     path: '/login',
     element: <LoginPage />,
-  },
-  {
-    path: '/register',
-    element: <RegisterPage />,
-  },
+  }
 ];
 ```
 
@@ -2573,7 +2568,7 @@ afterAll(() => server.close());
 describe('Auth Integration', () => {
   it('logs in successfully', async () => {
     const response = await authService.login({
-      email: 'test@example.com',
+      email: 'test@.com',
       password: 'password123',
     });
     

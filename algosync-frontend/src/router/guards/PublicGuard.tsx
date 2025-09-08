@@ -13,7 +13,7 @@ interface PublicGuardProps {
  */
 const PublicGuard: React.FC<PublicGuardProps> = ({ 
   children, 
-  redirectTo = '/dashboard' 
+  redirectTo = '/home' 
 }) => {
   const { isAuthenticated } = useAuthStore();
   

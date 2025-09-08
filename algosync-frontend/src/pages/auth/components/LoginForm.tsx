@@ -119,12 +119,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
       }
       // 处理网络错误或其他错误
       console.error('提交失败:', error);
-      if (!error.errors) {
-        setErrors({
-          email: '登录失败，请检查网络连接或稍后重试'
-        });
-        setTouched({ email: true });
-      }
     } finally {
       setIsSubmitting(false);
     }
