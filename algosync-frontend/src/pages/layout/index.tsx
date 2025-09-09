@@ -76,18 +76,17 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* 顶部导航栏 */}
+    
       <header className="bg-white shadow-sm border-b sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            {/* Logo */}
+        
             <div className="flex items-center">
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 AlgoCollab
               </h1>
             </div>
             
-            {/* Tab Navigation */}
             <nav className="hidden md:flex space-x-1">
               {tabs.map((tab) => (
                 <button
@@ -111,7 +110,6 @@ const MainLayout: React.FC = () => {
               ))}
             </nav>
 
-            {/* User Info */}
             <div className="flex items-center space-x-4">
               <div className="hidden sm:block text-right">
                 <p className="text-sm font-medium text-gray-900">
@@ -126,7 +124,6 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Tab Navigation */}
         <div className="md:hidden border-t">
           <div className="flex justify-around">
             {tabs.map((tab) => (
@@ -149,7 +146,6 @@ const MainLayout: React.FC = () => {
         </div>
       </header>
       
-      {/* Main Content Area */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <div className="animate-fadeIn">
           {currentTab?.component}

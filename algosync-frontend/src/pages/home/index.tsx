@@ -65,6 +65,7 @@ const HomePage: React.FC = () => {
   const fetchDashboardData = () => {
     // 用户需要在这里实现从API获取仪表板数据的逻辑
     // 例如: 调用API获取用户的练习统计、完成题目数等
+    
   };
 
   return (

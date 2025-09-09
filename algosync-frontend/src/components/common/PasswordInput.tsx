@@ -8,13 +8,13 @@ interface PasswordInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
-  error?: string;
-  touched?: boolean;
-  required?: boolean;
-  disabled?: boolean;
-  autoComplete?: string;
-  showStrengthIndicator?: boolean;
-  className?: string;
+  error?: string; 
+  touched?: boolean; 
+  required?: boolean; 
+  disabled?: boolean; 
+  autoComplete?: string; 
+  showStrengthIndicator?: boolean; 
+  className?: string; 
 }
 
 // 密码强度计算函数
