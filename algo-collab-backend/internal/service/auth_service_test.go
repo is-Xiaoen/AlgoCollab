@@ -198,27 +198,6 @@ func TestAuthService_Register(t *testing.T) {
 	}
 }
 
-// TODO(human): 实现登录功能的测试
-// TestAuthService_Login 测试登录功能
-// 提示：
-// 1. 创建测试用的密码哈希：
-//    hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("Test1234!"), bcrypt.DefaultCost)
-// 2. Mock FindByEmail 返回用户对象：
-//    testUser := &models.User{
-//        ID: 1,
-//        Username: "testuser",
-//        Email: "test@example.com",
-//        PasswordHash: string(hashedPassword),
-//        Status: "active",
-//        Role: "user",
-//        UUID: "test-uuid",
-//    }
-// 3. 测试场景：
-//    - 成功登录
-//    - 用户不存在（FindByEmail返回error）
-//    - 密码错误（PasswordHash不匹配）
-//    - 账号被禁用（Status != "active"）
-
 func TestAuthService_Login(t *testing.T) {
 	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("Test1234!"), bcrypt.DefaultCost)
 	testUser := &models.User{

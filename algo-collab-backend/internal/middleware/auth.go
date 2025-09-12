@@ -16,6 +16,7 @@ func AuthMiddleware(authService service.AuthService) gin.HandlerFunc {
 			c.JSON(401, gin.H{
 				"code":    401,
 				"message": "未提供认证令牌",
+				"data":    nil,
 			})
 			c.Abort()
 			return
@@ -26,7 +27,8 @@ func AuthMiddleware(authService service.AuthService) gin.HandlerFunc {
 		if err != nil {
 			c.JSON(401, gin.H{
 				"code":    401,
-				"message": "无效的认证令牌",
+				"message": "无效的认证令牌: " + err.Error(),
+				"data":    nil,
 			})
 			c.Abort()
 			return
@@ -65,6 +67,7 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 			c.JSON(403, gin.H{
 				"code":    403,
 				"message": "无权限访问",
+				"data":    nil,
 			})
 			c.Abort()
 			return
@@ -81,6 +84,7 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 		c.JSON(403, gin.H{
 			"code":    403,
 			"message": "权限不足",
+			"data":    nil,
 		})
 		c.Abort()
 	}
