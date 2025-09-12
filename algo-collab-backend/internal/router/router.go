@@ -37,15 +37,15 @@ func (r *Router) Setup(engine *gin.Engine) {
 			{
 				auth.POST("register", r.authController.Register)
 				auth.POST("login", r.authController.Login)
-				auth.POST("refresh", r.authController.Refresh)
+				auth.POST("refresh", r.authController.RefreshToken)
 			}
 
 			// 需要认证的路由
 			protected := v1.Group("")
 			protected.Use(middleware.AuthMiddleware(r.authService))
 			{
-				protected.POST("logout", r.authController.Logout)
-				protected.POST("me", r.authController.GetCurrentUser)
+				protected.POST("/auth/logout", r.authController.Logout)
+				protected.GET("/auth/me", r.authController.GetCurrentUser)
 			}
 		}
 	}
