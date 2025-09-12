@@ -18,7 +18,18 @@ func Warn(msg string, fields ...zap.Field) {
 	Logger.Warn(msg, fields...)
 }
 
+// Error 系统错误日志（带堆栈）
 func Error(msg string, fields ...zap.Field) {
+	Logger.Error(msg, fields...)
+}
+
+// BusinessWarn 业务警告日志（不带堆栈）- 用于业务验证失败等场景
+func BusinessWarn(msg string, fields ...zap.Field) {
+	Logger.Warn(msg, fields...)
+}
+
+// BusinessError 业务错误日志（不带堆栈）- 用于业务逻辑错误
+func BusinessError(msg string, fields ...zap.Field) {
 	Logger.Error(msg, fields...)
 }
 
