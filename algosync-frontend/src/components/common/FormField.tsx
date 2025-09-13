@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface FormFieldProps {
-  label: string;
+  label: string;//字段名
   name: string;
   type?: string;
   placeholder?: string;
