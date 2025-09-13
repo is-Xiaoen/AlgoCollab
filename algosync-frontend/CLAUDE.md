@@ -10,6 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with th
 - **目标**：实现带Tab切换的登录注册页面
 - **进度**：架构设计阶段
 - **技术栈**：React + TypeScript + Tailwind CSS + React Hook Form + Zod
+- **参考文档**: frontend-auth-system.md
 
 ---
 
@@ -224,7 +225,6 @@ pages/auth/
 - wide: xl (1280px)
 
 ---
-
 ## 🐛 调试技巧
 
 ### React DevTools
@@ -301,5 +301,4 @@ pages/auth/
 - 配置开发环境
 
 ---
-
 *最后更新：2025-01-05*

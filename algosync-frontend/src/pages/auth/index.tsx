@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthTabs from './components/AuthTabs';
 import LoginForm from './components/LoginForm';
@@ -9,7 +9,7 @@ import { useAuthStore } from '../../stores/authStore';
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login } = useAuthStore();
+  const { login, register, isAuthenticated, error, clearError } = useAuthStore();
   
   // 根据路径设置默认tab
   const defaultTab = location.pathname === '/register' ? 'register' : 'login';
@@ -18,73 +18,55 @@ const AuthPage: React.FC = () => {
   // 获取重定向路径
   const from = location.state?.from || '/home';
   
-  // 初始化时检查是否有记住的邮箱
-  React.useEffect(() => {
-    const rememberedEmail = localStorage.getItem('rememberEmail');
-    if (rememberedEmail) {
-      console.log('找到记住的邮箱:', rememberedEmail);
+  // 如果已登录，重定向
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate(from, { replace: true });
     }
-  }, []);
+  }, [isAuthenticated, navigate, from]);
+  
+  // 切换Tab时清除错误
+  useEffect(() => {
+    clearError();
+  }, [activeTab, clearError]);
 
   // 登录处理逻辑
   const handleLogin = async (data: LoginFormData) => {
-    console.log('登录数据:', data);
-    return new Promise<void>((resolve, reject) => {
-      setTimeout(() => {
-        if (data.email === 'test@example.com' && data.password === 'Test123!') {
-          console.log('登录成功！');
-          localStorage.setItem('authToken', 'mock-jwt-token');
-          localStorage.setItem('userEmail', data.email);
-          
-          if (data.rememberMe) {
-            localStorage.setItem('rememberEmail', data.email);
-          } else {
-            localStorage.removeItem('rememberEmail');
-          }
-          login(
-            { 
-              id: 'user-123', 
-              username: 'testuser', 
-              email: data.email 
-            },
-            'mock-jwt-token'
-          );
-          alert('登录成功！欢迎回来！');
-          navigate(from, { replace: true });
-          resolve();
-        } else {
-          console.error('登录失败：邮箱或密码错误');
-          reject(new Error('邮箱或密码错误'));
-        }
-      }, 1500);
-    });
+    try {
+      await login(data.email, data.password, data.rememberMe);
+      // 登录成功后会通过useEffect自动跳转
+    } catch (error: any) {
+      console.error('登录失败:', error);
+      // 错误信息已经在store中设置
+    }
   };
 
+  // 注册处理逻辑
   const handleRegister = async (data: RegisterFormData) => {
-    console.log('注册数据:', data);
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
-        console.log('注册成功！');
-        alert(`注册成功！欢迎加入 AlgoCollab，${data.username}！\n\n请使用您的邮箱地址登录。`);
-        switchToLogin()
-        resolve();
-      }, 500);
-    });
+    try {
+      await register(data.username, data.email, data.password);
+      // 注册成功后自动登录并跳转
+    } catch (error: any) {
+      console.error('注册失败:', error);
+      // 错误信息已经在store中设置
+    }
   };
 
+  // TODO(human): 实现忘记密码功能
+  // 提示：调用authService.requestPasswordReset
   const handleForgotPassword = () => {
     console.log('忘记密码');
     const email = prompt('请输入您的注册邮箱地址：');
     if (email) {
       console.log(`发送重置邮件到: ${email}`);
-      setTimeout(() => {
-        alert(`重置密码链接已发送到 ${email}\n\n请查看您的邮箱并按照邮件中的说明重置密码。`);
-      }, 1000);
+      // 调用密码重置API
+      alert(`重置密码链接已发送到 ${email}\n\n请查看您的邮箱并按照邮件中的说明重置密码。`);
     }
   };
 
   const switchToLogin = () => {
     setActiveTab('login');
+    clearError();
   };
 
   return (
@@ -96,6 +78,13 @@ const AuthPage: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-xl p-8" >
+          {/* 全局错误提示 */}
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
+          )}
+          
           <AuthTabs 
             defaultTab={activeTab}
             onTabChange={setActiveTab}
