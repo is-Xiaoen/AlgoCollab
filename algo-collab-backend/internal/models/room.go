@@ -1,5 +1,7 @@
 package models
 
+import "time"
+
 // Room 房间模型
 type Room struct {
 	BaseModel
@@ -15,6 +17,19 @@ type Room struct {
 
 	// 关联
 	Creator User `gorm:"foreignKey:CreatorID" json:"creator"`
+}
+
+type RoomMember struct {
+	BaseModel
+	RoomID       uint      `json:"room_id" gorm:"not null"`
+	UserID       uint      `json:"user_id" gorm:" not null"`
+	Role         string    `json:"role" gorm:"size:20;default:'member'"` // owner/admin/member
+	JoinedAt     time.Time `json:"joined_at" gorm:"autoCreateTime"`
+	LastActiveAt time.Time `json:"last_active_at" gorm:"autoCreateTime"`
+
+	// 关联
+	Room  Room `json:"room" gorm:"foreignKey:RoomID"`
+	Users User `json:"user" gorm:"foreignKey:UserID"`
 }
 
 func (Room) TableName() string {
