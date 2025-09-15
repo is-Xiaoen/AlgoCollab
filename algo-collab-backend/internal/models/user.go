@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -31,12 +32,6 @@ func (User) TableName() string {
 // BeforeCreate GORM 钩子：创建前执行
 func (u *User) BeforeCreate(tx *gorm.DB) error {
 	// 生成 UUID
-	u.UUID = generateUUID()
+	u.UUID = uuid.New().String()
 	return nil
-}
-
-// generateUUID 生成UUID（简单实现，实际应该用 uuid 库）
-func generateUUID() string {
-	// TODO(human): 实现UUID生成
-	return "temp-uuid"
 }

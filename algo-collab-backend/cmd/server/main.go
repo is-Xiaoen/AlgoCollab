@@ -3,12 +3,14 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/is-Xiaoen/algo-collab/internal/config"
 	"github.com/is-Xiaoen/algo-collab/internal/database"
 	"github.com/is-Xiaoen/algo-collab/internal/middleware"
+	"github.com/is-Xiaoen/algo-collab/internal/repository"
+	"github.com/is-Xiaoen/algo-collab/internal/router"
+	"github.com/is-Xiaoen/algo-collab/internal/service"
 	"github.com/is-Xiaoen/algo-collab/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -38,32 +40,36 @@ func main() {
 	}
 	defer database.Close()
 
+	// 初始化 Redis
+	if err := database.InitRedis(&config.GlobalConfig.Redis); err != nil {
+		logger.Fatal("Redis 连接失败", zap.Error(err))
+	}
+	defer database.CloseRedis()
+
 	// 4. 初始化 Gin
+	// 初始化服务层
+	userRepo := repository.NewUserRepository(database.DB)
+	authService := service.NewAuthService(userRepo, &config.GlobalConfig.JWT)
+
 	if config.GlobalConfig.App.Env == "production" {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	router := gin.New()
-	// 5. 应用中间件
-	router.Use(
-		middleware.LoggerMiddleware(),
-		middleware.RecoveryMiddleware(),
-		middleware.CORSMiddleware(&config.GlobalConfig.CORS),
-	)
+	r := gin.New()
+	// 5.应用全局中间件
+	r.Use(middleware.LoggerMiddleware())
+	r.Use(middleware.RecoveryMiddleware())
+	r.Use(middleware.CORSMiddleware(&config.GlobalConfig.CORS))
 
-	// 6. 测试路由
-	router.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
-			"status":  "healthy",
-			"message": "AlgoCollab Backend is running",
-		})
-	})
+	// 设置路由
+	newRouter := router.NewRouter(authService)
+	newRouter.Setup(r)
 
 	// 7. 启动服务器
 	addr := fmt.Sprintf(":%d", config.GlobalConfig.App.Port)
 	logger.Info("✅ 服务器启动成功", zap.String("address", addr))
 
-	if err := router.Run(addr); err != nil {
+	if err := r.Run(addr); err != nil {
 		logger.Fatal("服务器启动失败", zap.Error(err))
 	}
 
