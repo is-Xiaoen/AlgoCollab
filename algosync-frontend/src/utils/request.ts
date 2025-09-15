@@ -12,11 +12,11 @@ const request: AxiosInstance = axios.create({
 });
 
 // 专门用于刷新令牌的独立axios实例，避免循环拦截
-// const refreshTokenRequest: AxiosInstance = axios.create({
-//   baseURL:
-//     import.meta.env.VITE_APP_ENV === 'localhost' ? '/api' : import.meta.env.VITE_API_BASE_URL,
-//   timeout: 10000,
-// });
+const refreshTokenRequest: AxiosInstance = axios.create({
+  baseURL:
+    import.meta.env.VITE_APP_ENV === 'localhost' ? '/api' : import.meta.env.VITE_API_BASE_URL,
+  timeout: 10000,
+});
 
 // 请求队列管理
 interface QueueItem {
