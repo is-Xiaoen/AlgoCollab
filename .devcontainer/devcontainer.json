@@ -1,0 +1,27 @@
+{
+  "name": "go-with-claude",
+  "image": "mcr.microsoft.com/devcontainers/go:1-1.22-bullseye",
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": { "version": "lts" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "golang.go",
+        "anthropic.claude-code"
+      ],
+      "settings": {
+        "go.useLanguageServer": true
+      }
+    }
+  },
+  "postCreateCommand": "npm i -g @anthropic-ai/claude-code",
+  "containerEnv": {
+    "ANTHROPIC_BASE_URL" : "${localEnv:ANTHROPIC_BASE_URL}",
+    "ANTHROPIC_API_KEY": "${localEnv:ANTHROPIC_API_KEY}"
+  },
+  "portsAttributes": {
+    "8080": { "label": "app", "onAutoForward": "openBrowser" }
+  },
+  "forwardPorts": [8080]
+}
