@@ -166,7 +166,9 @@ export function useAuth(options?: UseAuthOptions) {
    */
   const avatarUrl = useMemo(() => {
     if (!user) return '';
-    return user.avatar || `https://ui-avatars.com/api/?name=${displayName}&background=random`;
+    // 安全访问avatar字段，因为并非所有User类型都有avatar
+    const avatar = 'avatar' in user ? user.avatar : undefined;
+    return avatar || `https://ui-avatars.com/api/?name=${displayName}&background=random`;
   }, [user, displayName]);
 
   return {

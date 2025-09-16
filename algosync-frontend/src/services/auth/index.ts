@@ -12,7 +12,7 @@ class AuthService {
    */
   async login(email: string, password: string): Promise<AuthResponse<IUser>> {
     try {
-      const response = await request.post<ILoginResponse>('/api/v1/auth/login', {
+      const response = await request.post<ILoginResponse>('/v1/auth/login', {
         email,
         password,
       });
@@ -46,7 +46,7 @@ class AuthService {
     password: string;
   }): Promise<AuthResponse<IRegisterUser>> {
     try {
-      const response = await request.post<IRegisterResponse>('/api/v1/auth/register', userData);
+      const response = await request.post<IRegisterResponse>('/v1/auth/register', userData);
 
       const data = response.data as unknown as IRegisterData;
       if (data) {
@@ -76,7 +76,7 @@ class AuthService {
       const response = await request.post<{
         code: number;
         data: { access_token: string; refresh_token: string };
-      }>('/api/v1/auth/refresh', {
+      }>('/v1/auth/refresh', {
         refresh_token: refreshToken,
       });
 
@@ -102,7 +102,7 @@ class AuthService {
    */
   async logout(): Promise<void> {
     try {
-      await request.post('/api/v1/auth/logout');
+      await request.post('/v1/auth/logout');
     } catch (error) {
       console.error('Logout API error:', error);
       // 即使API失败也不抛出错误，让调用者决定如何处理
@@ -114,7 +114,7 @@ class AuthService {
    */
   async getCurrentUser(): Promise<IUserInfo> {
     try {
-      const response = await request.get<{ code: number; data: IUserInfo }>('/api/v1/auth/me');
+      const response = await request.get<{ code: number; data: IUserInfo }>('/v1/auth/me');
       return response.data.data;
     } catch (error) {
       console.error('Failed to get current user:', error);
@@ -127,7 +127,7 @@ class AuthService {
    */
   async validateToken(): Promise<boolean> {
     try {
-      await request.get('/api/v1/auth/validate');
+      await request.get('/v1/auth/validate');
       return true;
     } catch {
       return false;

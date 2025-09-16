@@ -1,6 +1,7 @@
 // 用户信息接口
 export interface IUser {
   id: number;
+  user_id?:number;
   username: string;
   email: string;
   avatar: string;

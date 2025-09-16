@@ -2,12 +2,13 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import authService from '../services/auth';
-import type { IUser } from '../services/auth/types';
+import type { IUser, IRegisterUser, IUserInfo } from '../services/auth/types';
 import tokenManager from '../utils/tokenManager';
 
-interface User extends IUser {
-  // 扩展用户类型（如果需要）
-}
+// 统一的用户类型 - 合并登录和注册用户的所有可能字段
+type User = (IRegisterUser | IUser |  IUserInfo) & {
+  user_id?: number; // 兼容字段
+};
 
 interface AuthState {
   // 状态
@@ -75,7 +76,7 @@ export const useAuthStore = create<AuthState>()(
           tokenManager.setTokenPair(tokens.accessToken, tokens.refreshToken);
           
           set((state) => {
-            state.user = user;
+            state.user = user as User;
             state.isAuthenticated = true;
             state.loginAttempts = 0;
             state.lastActivity = Date.now();
@@ -105,7 +106,7 @@ export const useAuthStore = create<AuthState>()(
           tokenManager.setTokenPair(tokens.accessToken, tokens.refreshToken);
           
           set((state) => {
-            state.user = user;
+            state.user = user as User;
             state.isAuthenticated = true;
             state.lastActivity = Date.now();
             state.isLoading = false;

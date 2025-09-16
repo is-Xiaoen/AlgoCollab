@@ -13,7 +13,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
   onSubmit,
   onForgotPassword 
 }) => {
-  // 表单数据状态
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
@@ -24,7 +23,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [touched, setTouched] = useState<Partial<Record<keyof LoginFormData, boolean>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // 表单重置功能
   const resetForm = () => {
     setFormData({
       email: '',
@@ -39,13 +37,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
     const value = e.target.value;
-    // 2. 更新表单数据
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
     
-    // 当用户开始输入时，立即清除错误提示
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -56,7 +52,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
   };
 
   const handleBlur = (field: keyof LoginFormData) => () => {
-    // 表示用户已经与该字段交互过
     setTouched(prev => ({
       ...prev,
       [field]: true
@@ -89,16 +84,14 @@ const LoginForm: React.FC<LoginFormProps> = ({
       setIsSubmitting(true);
       const validatedData = loginSchema.parse(formData);
       setErrors({});
-      // 4. 调用提交回调（如果提供）
       if (onSubmit) {
         await onSubmit(validatedData);
       }
-      resetForm(); // 完全重置表单
-      setTouched({}); // 重置 touched 状态
+      resetForm(); 
+      setTouched({}); 
       setFormData(prev => ({ ...prev, password: '' }));
       
     } catch (error: any) {
-      // 6. 处理验证错误
       if (error.errors && error.errors.length > 0) {
         const fieldErrors: Partial<Record<keyof LoginFormData, string>> = {};
         error.errors.forEach((err: any) => {
@@ -106,16 +99,13 @@ const LoginForm: React.FC<LoginFormProps> = ({
             fieldErrors[err.path[0] as keyof LoginFormData] = err.message;
           }
         });
-        // 7. 设置错误信息
         setErrors(fieldErrors);
-        // 8. 将所有字段设置为 touched，以显示错误信息
         const allTouched: Partial<Record<keyof LoginFormData, boolean>> = {};
         Object.keys(formData).forEach(key => {
           allTouched[key as keyof LoginFormData] = true;
         });
         setTouched(allTouched);
       }
-      // 处理网络错误或其他错误
       console.error('提交失败:', error);
     } finally {
       setIsSubmitting(false);
@@ -213,7 +203,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
                 />
               </svg>
               
-              {/* 文字带闪烁效果 */}
               <span className="animate-pulse">
                 登录中
                 <span className="inline-flex">
@@ -266,13 +255,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
           <span className="absolute inset-0 rounded-lg ring-0 group-active:ring-4 ring-blue-400 ring-opacity-30 transition-all duration-300" />
         )}
       </button>
-
-      {/* 扩展学习任务：
-          TODO(human): 添加社交媒体登录按钮
-          - 实现 Google/GitHub 登录按钮
-          - 添加分隔线 "或"
-          - 处理第三方登录逻辑
-      */}
     </form>
   );
 };
