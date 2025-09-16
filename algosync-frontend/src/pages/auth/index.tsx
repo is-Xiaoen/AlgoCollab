@@ -11,21 +11,17 @@ const AuthPage: React.FC = () => {
   const location = useLocation();
   const { login, register, isAuthenticated, error, clearError } = useAuthStore();
   
-  // 根据路径设置默认tab
   const defaultTab = location.pathname === '/register' ? 'register' : 'login';
   const [activeTab, setActiveTab] = useState<'login' | 'register'>(defaultTab);
   
-  // 获取重定向路径
   const from = location.state?.from || '/home';
   
-  // 如果已登录，重定向
   useEffect(() => {
     if (isAuthenticated) {
       navigate(from, { replace: true });
     }
   }, [isAuthenticated, navigate, from]);
   
-  // 切换Tab时清除错误
   useEffect(() => {
     clearError();
   }, [activeTab, clearError]);
@@ -33,11 +29,9 @@ const AuthPage: React.FC = () => {
   // 登录处理逻辑
   const handleLogin = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password, data.rememberMe);
-      // 登录成功后会通过useEffect自动跳转
+      await login(data.email, data.password);
     } catch (error: any) {
       console.error('登录失败:', error);
-      // 错误信息已经在store中设置
     }
   };
 
@@ -45,21 +39,16 @@ const AuthPage: React.FC = () => {
   const handleRegister = async (data: RegisterFormData) => {
     try {
       await register(data.username, data.email, data.password);
-      // 注册成功后自动登录并跳转
     } catch (error: any) {
       console.error('注册失败:', error);
-      // 错误信息已经在store中设置
     }
   };
 
-  // TODO(human): 实现忘记密码功能
-  // 提示：调用authService.requestPasswordReset
   const handleForgotPassword = () => {
     console.log('忘记密码');
     const email = prompt('请输入您的注册邮箱地址：');
     if (email) {
       console.log(`发送重置邮件到: ${email}`);
-      // 调用密码重置API
       alert(`重置密码链接已发送到 ${email}\n\n请查看您的邮箱并按照邮件中的说明重置密码。`);
     }
   };

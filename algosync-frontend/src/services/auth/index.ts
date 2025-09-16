@@ -1,48 +1,136 @@
 import request from '../../utils/request';
-import type {  ILoginData, ILoginResponse, IRefreshTokenData, IUserInfoResponse, IUserInfo, IRegisterData, IRegisterResponse } from './types';
-import tokenManager from '../../utils/tokenManager';
+import type { ILoginData, ILoginResponse, IRefreshTokenData,IUser, IUserInfo, IRegisterData, IRegisterResponse, IRegisterUser } from './types';
+import type { TokenPair, AuthResponse } from '../../types/token';
 
 /**
- * 认证服务API
+ * 认证服务API - 只负责与后端通信，不管理token
  */
 class AuthService {
-  async login(email: string, password: string): Promise<ILoginResponse> {
+  /**
+   * 登录API调用
+   * @returns 返回标准化的token对象
+   */
+  async login(email: string, password: string): Promise<AuthResponse<IUser>> {
     try {
       const response = await request.post<ILoginResponse>('/api/v1/auth/login', {
         email,
         password,
       });
-      const Data = response.data as unknown as  ILoginData
-      if (Data) {
-        const { token, refresh_token } = Data;
-        tokenManager.setTokenPair(token, refresh_token);
+      
+      const data = response.data as unknown as ILoginData;
+      if (data) {
+        const { token, refresh_token, user } = data;
+        return {
+          user,
+          tokens: {
+            accessToken: token,
+            refreshToken: refresh_token
+          }
+        };
       }
-      return response.data;
+      
+      throw new Error('Invalid login response');
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
     }
   }
 
+  /**
+   * 注册API调用
+   * @returns 返回标准化的token对象
+   */
   async register(userData: {
     username: string;
     email: string;
     password: string;
-  }): Promise<IRegisterResponse> {
+  }): Promise<AuthResponse<IRegisterUser>> {
     try {
       const response = await request.post<IRegisterResponse>('/api/v1/auth/register', userData);
 
-      // 注册成功后自动登录
-      const Data = response.data as unknown as  IRegisterData
-      if (Data) {
-        const { access_token, refresh_token } = Data;
-        tokenManager.setTokenPair(access_token, refresh_token);
+      const data = response.data as unknown as IRegisterData;
+      if (data) {
+        const { access_token, refresh_token, user } = data;
+        return {
+          user,
+          tokens: {
+            accessToken: access_token,
+            refreshToken: refresh_token
+          }
+        };
       }
-
-      return response.data;
+      
+      throw new Error('Invalid register response');
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
+    }
+  }
+
+  /**
+   * 刷新Token API调用
+   * @returns 返回新的token对
+   */
+  async refreshToken(refreshToken: string): Promise<TokenPair> {
+    try {
+      const response = await request.post<{
+        code: number;
+        data: { access_token: string; refresh_token: string };
+      }>('/api/v1/auth/refresh', {
+        refresh_token: refreshToken,
+      });
+
+      const data = response.data as unknown as IRefreshTokenData;
+
+      if (data) {
+        const { access_token, refresh_token } = data;
+        return {
+          accessToken: access_token,
+          refreshToken: refresh_token
+        };
+      }
+
+      throw new Error('Invalid refresh response');
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 登出API调用
+   */
+  async logout(): Promise<void> {
+    try {
+      await request.post('/api/v1/auth/logout');
+    } catch (error) {
+      console.error('Logout API error:', error);
+      // 即使API失败也不抛出错误，让调用者决定如何处理
+    }
+  }
+
+  /**
+   * 获取当前用户信息API调用
+   */
+  async getCurrentUser(): Promise<IUserInfo> {
+    try {
+      const response = await request.get<{ code: number; data: IUserInfo }>('/api/v1/auth/me');
+      return response.data.data;
+    } catch (error) {
+      console.error('Failed to get current user:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 验证Token是否有效API调用
+   */
+  async validateToken(): Promise<boolean> {
+    try {
+      await request.get('/api/v1/auth/validate');
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -62,81 +150,6 @@ class AuthService {
    *   // 你的实现
    * }
    */
-
-  /**
-   * 刷新Token
-   */
-  async refreshToken(): Promise<{ access_token: string; refresh_token: string }> {
-    const refreshToken = tokenManager.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('没有有效的令牌');
-    }
-    try {
-      const response = await request.post<{
-        code: number;
-        data: { access_token: string; refresh_token: string };
-      }>('/api/v1/auth/refresh', {
-        refresh_token: refreshToken,
-      });
-
-      const Data = response.data as unknown as IRefreshTokenData
-
-      if (Data) {
-        const { access_token, refresh_token } = Data;
-        tokenManager.setTokenPair(access_token, refresh_token);
-        return { access_token, refresh_token };
-      }
-
-      throw new Error('Invalid refresh response');
-    } catch (error) {
-      // 刷新失败，清除本地Token
-      tokenManager.clearAll();
-      throw error;
-    }
-  }
-
-  /**
-   * 登出
-   */
-  async logout(): Promise<void> {
-    try {
-      // TODO(human): 实现后端登出接口调用
-      // 提示：调用后端撤销Token的接口
-      // await request.post('/api/v1/auth/logout');
-      
-      // 清除本地Token
-      tokenManager.clearAll();
-    } catch (error) {
-      // 即使后端调用失败，也要清除本地Token
-      tokenManager.clearAll();
-      console.error('Logout error:', error);
-    }
-  }
-
-  /**
-   * 获取当前用户信息
-   */
-  async getCurrentUser(): Promise<IUserInfoResponse> {
-    try {
-      const response = await request.get<{ code: number; data: IUserInfo }>('/api/v1/auth/me');
-      return response.data;
-    } catch (error) {
-      console.error('Failed to get current user:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * 验证Token是否有效
-   */
-  async validateToken(): Promise<boolean> {
-    try {
-      await request.get('/api/v1/auth/validate');
-      return true;
-    } catch {
-      return false;
-    }
-  }
 }
 
 // 导出服务实例

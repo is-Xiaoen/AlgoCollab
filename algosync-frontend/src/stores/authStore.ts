@@ -19,7 +19,7 @@ interface AuthState {
   lastActivity: number;
   
   // 操作
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (user: Partial<User>) => void;
@@ -38,7 +38,7 @@ interface AuthState {
 }
 
 // 无活动超时时间（30分钟）
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+// const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 
 // 最大登录尝试次数
 const MAX_LOGIN_ATTEMPTS = 5;
@@ -56,7 +56,7 @@ export const useAuthStore = create<AuthState>()(
       lastActivity: Date.now(),
       
       // 登录操作
-      login: async (email: string, password: string, rememberMe = false) => {
+      login: async (email: string, password: string) => {
         set((state) => {
           state.isLoading = true;
           state.error = null;
@@ -69,27 +69,18 @@ export const useAuthStore = create<AuthState>()(
           }
           
           // 调用登录API
-          const response = await authService.login(email, password);
+          const { user, tokens } = await authService.login(email, password);
           
-          if (response.data) {
-            const { user } = response.data;
-            
-            set((state) => {
-              state.user = user;
-              state.isAuthenticated = true;
-              state.loginAttempts = 0;
-              state.lastActivity = Date.now();
-              state.isLoading = false;
-            });
-            
-            // TODO(human): 实现记住我功能
-            // 提示：根据rememberMe参数决定token存储策略
-            // if (rememberMe) {
-            //   // 长期存储
-            // } else {
-            //   // 会话存储
-            // }
-          }
+          // 通过tokenManager存储tokens
+          tokenManager.setTokenPair(tokens.accessToken, tokens.refreshToken);
+          
+          set((state) => {
+            state.user = user;
+            state.isAuthenticated = true;
+            state.loginAttempts = 0;
+            state.lastActivity = Date.now();
+            state.isLoading = false;
+          });
         } catch (error: any) {
           set((state) => {
             state.error = error.response?.data?.message || error.message || '登录失败';
@@ -108,18 +99,17 @@ export const useAuthStore = create<AuthState>()(
         });
         
         try {
-          const response = await authService.register({ username, email, password });
+          const { user, tokens } = await authService.register({username, email, password});
           
-          if (response.data) {
-            const { user } = response.data;
-            
-            set((state) => {
-              state.user = user;
-              state.isAuthenticated = true;
-              state.lastActivity = Date.now();
-              state.isLoading = false;
-            });
-          }
+          // 通过tokenManager存储tokens
+          tokenManager.setTokenPair(tokens.accessToken, tokens.refreshToken);
+          
+          set((state) => {
+            state.user = user;
+            state.isAuthenticated = true;
+            state.lastActivity = Date.now();
+            state.isLoading = false;
+          });
         } catch (error: any) {
           set((state) => {
             state.error = error.response?.data?.message || error.message || '注册失败';
@@ -134,6 +124,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           await authService.logout();
         } finally {
+          // 通过tokenManager清除tokens
+          tokenManager.clearAll();
           set((state) => {
             state.user = null;
             state.isAuthenticated = false;
@@ -266,6 +258,37 @@ export const useAuthStore = create<AuthState>()(
 // 初始化认证系统
 export const initializeAuth = async () => {
   const store = useAuthStore.getState();
+  
+  // 为tokenManager设置刷新回调函数
+  const refreshApiFunction = async (refreshToken: string) => {
+    try {
+      return await authService.refreshToken(refreshToken);
+    } catch (error) {
+      console.error('Token refresh failed:', error);
+      return null;
+    }
+  };
+  
+  // 重写tokenManager的自动刷新逻辑
+  const originalScheduleRefresh = (tokenManager as any).scheduleRefresh?.bind(tokenManager);
+  if (originalScheduleRefresh) {
+    (tokenManager as any).scheduleRefresh = (accessToken: string) => {
+      // 获取剩余时间
+      const remainingTime = (tokenManager as any).getTokenRemainingTime?.(accessToken) || 0;
+      if (remainingTime <= 0) return;
+
+      const refreshTime = Math.min(
+        remainingTime * 0.8,
+        remainingTime - 10 * 60 * 1000
+      );
+
+      if (refreshTime > 0) {
+        setTimeout(() => {
+          tokenManager.refreshToken(refreshApiFunction);
+        }, refreshTime);
+      }
+    };
+  }
   
   // 检查并刷新认证状态
   await store.refreshAuth();

@@ -17,7 +17,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const [formData, setFormData] = useState<LoginFormData>({
     email: '',
     password: '',
-    rememberMe: false,
   });
 
   // 错误信息状态
@@ -30,7 +29,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
     setFormData({
       email: '',
       password: '',
-      rememberMe: false,
     });
     setErrors({});
     setTouched({});
@@ -40,7 +38,7 @@ const LoginForm: React.FC<LoginFormProps> = ({
   const handleChange = (field: keyof LoginFormData) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const value = field === 'rememberMe' ? e.target.checked : e.target.value;
+    const value = e.target.value;
     // 2. 更新表单数据
     setFormData(prev => ({
       ...prev,
@@ -155,71 +153,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
       />
 
       <div className="flex items-center justify-between">
-        <div className="flex items-center">
-          <div className="relative">
-            <input
-              id="remember-me"
-              name="rememberMe"
-              type="checkbox"
-              checked={formData.rememberMe}
-              onChange={handleChange('rememberMe')}
-              className="sr-only"
-              aria-label="记住我的登录状态"
-              aria-describedby="remember-description"
-            />    
-            <label
-              htmlFor="remember-me"
-              className="group cursor-pointer flex items-center"
-            >
-              <span className={`
-                relative inline-flex items-center justify-center
-                h-5 w-5 rounded border-2 transition-all duration-200
-                ${formData.rememberMe 
-                  ? 'bg-blue-600 border-blue-600' 
-                  : 'bg-white border-gray-300 hover:border-blue-400'
-                }
-                group-hover:shadow-md
-                focus-within:ring-2 focus-within:ring-blue-500 focus-within:ring-offset-2
-              `}>
-                {formData.rememberMe && (
-                  <svg 
-                    className="h-3 w-3 text-white animate-[checkmark_200ms_ease-in-out]" 
-                    fill="currentColor" 
-                    viewBox="0 0 12 12"
-                  >
-                    <path d="M10.28 2.28L3.989 8.575 1.695 6.28A1 1 0 00.28 7.695l3 3a1 1 0 001.414 0l7-7A1 1 0 0010.28 2.28z" />
-                  </svg>
-                )}
-              </span>
-              
-              <span className="ml-2 text-sm text-gray-700 select-none group-hover:text-gray-900">
-                记住我
-              </span>
-            </label>
-            <span id="remember-description" className="sr-only">
-              选中后，下次访问时将自动填充您的登录信息
-            </span>
-          </div>
-          <div className="ml-2 group relative">
-            <svg 
-              className="h-4 w-4 text-gray-400 hover:text-gray-600 cursor-help" 
-              fill="currentColor" 
-              viewBox="0 0 20 20"
-            >
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
-            </svg>
-            <div className="
-              invisible group-hover:visible opacity-0 group-hover:opacity-100
-              absolute left-0 bottom-full mb-2 px-2 py-1
-              bg-gray-800 text-white text-xs rounded
-              whitespace-nowrap transition-all duration-200
-              pointer-events-none z-10
-            ">
-              保持登录状态30天
-            </div>
-          </div>
-        </div>
-        
         <button
           type="button"
           onClick={onForgotPassword}

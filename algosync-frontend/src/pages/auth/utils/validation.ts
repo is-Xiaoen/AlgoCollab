@@ -27,7 +27,6 @@ const usernameSchema = z
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, '密码不能为空'),
-  rememberMe: z.boolean().optional(),
 });
 
 // 注册表单验证schema

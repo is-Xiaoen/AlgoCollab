@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../../stores/authStore';
+import { useAuthStore } from '../stores/authStore';
 
 interface UseAuthOptions {
   redirectTo?: string;
@@ -78,10 +78,9 @@ export function useAuth(options?: UseAuthOptions) {
   const login = useCallback(async (
     email: string, 
     password: string, 
-    rememberMe?: boolean
   ) => {
     try {
-      await storeLogin(email, password, rememberMe);
+      await storeLogin(email, password);
       
       // 登录成功后跳转
       const from = location.state?.from?.pathname || options?.redirectTo || '/dashboard';
@@ -129,13 +128,6 @@ export function useAuth(options?: UseAuthOptions) {
     navigate('/login');
   }, [storeLogout, navigate]);
 
-  /**
-   * 检查用户权限
-   */
-  const checkPermission = useCallback((permission: string) => {
-    if (!user?.permissions) return false;
-    return user.permissions.includes(permission);
-  }, [user]);
 
   /**
    * 检查用户角色
@@ -152,12 +144,6 @@ export function useAuth(options?: UseAuthOptions) {
     return roles.some(role => checkRole(role));
   }, [checkRole]);
 
-  /**
-   * 检查是否有所有权限
-   */
-  const hasAllPermissions = useCallback((permissions: string[]) => {
-    return permissions.every(permission => checkPermission(permission));
-  }, [checkPermission]);
 
   // TODO(human): 实现权限守卫装饰器
   // 功能：为方法添加权限检查
@@ -199,20 +185,12 @@ export function useAuth(options?: UseAuthOptions) {
     clearError,
     
     // 权限检查
-    checkPermission,
     checkRole,
     hasAnyRole,
-    hasAllPermissions,
   };
 }
 
-/**
- * Hook：检查单个权限
- */
-export function usePermission(permission: string): boolean {
-  const { checkPermission } = useAuth();
-  return checkPermission(permission);
-}
+
 
 /**
  * Hook：检查角色

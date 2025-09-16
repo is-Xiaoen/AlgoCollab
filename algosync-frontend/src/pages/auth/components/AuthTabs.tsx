@@ -433,16 +433,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
                 } else {
                   return 'opacity-0 absolute inset-0 pointer-events-none';
                 }
-              } else if (animationDirection === 'vertical') {
-                // 垂直滑动动画
-                if (isActive) {
-                  return 'opacity-100 translate-y-0 transition-all duration-500 ease-out delay-75';
-                } else if (isPrevious) {
-                  const direction = tabIndex < activeIndex ? '-translate-y-full' : 'translate-y-full';
-                  return `opacity-0 ${direction} transition-all duration-300 ease-in absolute inset-0`;
-                } else {
-                  return 'opacity-0 translate-y-full absolute inset-0 pointer-events-none';
-                }
               } else {
                 // 默认水平滑动动画
                 if (isActive) {

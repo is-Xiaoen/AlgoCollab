@@ -1,24 +1,20 @@
 import axios from 'axios';
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosError, AxiosResponse } from 'axios'
-import { getAccessToken } from '../stores/token';
 import tokenManager from './tokenManager';
 import authService from '../services/auth';
 
-// 主请求实例
 const request: AxiosInstance = axios.create({
   baseURL:
     import.meta.env.VITE_APP_ENV === 'localhost' ? '/api' : import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
 });
 
-// 专门用于刷新令牌的独立axios实例，避免循环拦截
 const refreshTokenRequest: AxiosInstance = axios.create({
   baseURL:
     import.meta.env.VITE_APP_ENV === 'localhost' ? '/api' : import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
 });
 
-// 请求队列管理
 interface QueueItem {
   resolve: (value?: any) => void;
   reject: (error?: any) => void;
@@ -105,11 +101,19 @@ class RequestQueueManager {
     if (!this.isRefreshing) {
       this.isRefreshing = true;
       try {
-        const { access_token } = await authService.refreshToken();
-        this.isRefreshing = false;
-        this.processQueue(null, access_token);
+        // 获取refreshToken并调用刷新API
+        const refreshToken = tokenManager.getRefreshToken();
+        if (!refreshToken) {
+          throw new Error('No refresh token available');
+        }
         
-        originalRequest.headers['Authorization'] = `Bearer ${access_token}`;
+        const tokens = await authService.refreshToken(refreshToken);
+        tokenManager.setTokenPair(tokens.accessToken, tokens.refreshToken);
+        
+        this.isRefreshing = false;
+        this.processQueue(null, tokens.accessToken);
+        
+        originalRequest.headers['Authorization'] = `Bearer ${tokens.accessToken}`;
         return request(originalRequest);
       } catch (error) {
         this.isRefreshing = false;
@@ -124,10 +128,6 @@ class RequestQueueManager {
     });
   }
 
-  /**
-   * 请求去重机制
-   * 防止相同的请求重复发送，提高性能
-   */
   private pendingRequests = new Map<string, Promise<any>>(); // 存储进行中的请求
   
   /**
@@ -141,25 +141,6 @@ class RequestQueueManager {
     const data = config.data ? JSON.stringify(config.data) : '';
     
     return `${method.toUpperCase()}|${url}|${params}|${data}`;
-  }
-  
-  /**
-   * 添加请求到待处理队列（暂未使用，为将来的去重功能保留）
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private addPendingRequest(config: InternalAxiosRequestConfig, promise: Promise<any>): void {
-    const key = this.getPendingKey(config);
-    this.pendingRequests.set(key, promise);
-  }
-  
-  /**
-   * 移除已完成的请求（暂未使用，为将来的去重功能保留）
-   * @param config - 请求配置
-   */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  private removePendingRequest(config: InternalAxiosRequestConfig): void {
-    const key = this.getPendingKey(config);
-    this.pendingRequests.delete(key);
   }
   
   /**
@@ -191,7 +172,7 @@ request.interceptors.request.use(
       return config;
     }
 
-    const accessToken = getAccessToken();
+    const accessToken = tokenManager.getAccessToken();
     if (accessToken) {
       if (!config.headers) {
         config.headers = new axios.AxiosHeaders();
