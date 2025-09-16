@@ -6,7 +6,7 @@ import type { IUser, IRegisterUser, IUserInfo } from '../services/auth/types';
 import tokenManager from '../utils/tokenManager';
 
 // 统一的用户类型 - 合并登录和注册用户的所有可能字段
-type User = (IRegisterUser | IUser |  IUserInfo) & {
+type User = (IRegisterUser | IUser | IUserInfo) & {
   user_id?: number; // 兼容字段
 };
 
@@ -18,7 +18,7 @@ interface AuthState {
   error: string | null;
   loginAttempts: number;
   lastActivity: number;
-  
+
   // 操作
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
@@ -26,23 +26,24 @@ interface AuthState {
   updateUser: (user: Partial<User>) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string | null) => void;
-  checkAuth: () => Promise<boolean>;
   refreshAuth: () => Promise<void>;
   updateLastActivity: () => void;
   clearError: () => void;
-  
-  // TODO(human): 实现会话管理
-  // 添加以下方法：
-  // setupInactivityTimer: () => void;
-  // resetInactivityTimer: () => void;
-  // handleInactiveLogout: () => void;
+
+  // 会话管理
+  setupInactivityTimer: () => void;
+  resetInactivityTimer: () => void;
+  handleInactiveLogout: () => void;
 }
 
 // 无活动超时时间（30分钟）
-// const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 
 // 最大登录尝试次数
 const MAX_LOGIN_ATTEMPTS = 5;
+
+// 无活动定时器引用（存储在模块级别，因为定时器不能序列化）
+let inactivityTimer: NodeJS.Timeout | null = null;
 
 // 创建认证 store，使用 persist 和 immer 中间件
 export const useAuthStore = create<AuthState>()(
@@ -55,26 +56,19 @@ export const useAuthStore = create<AuthState>()(
       error: null,
       loginAttempts: 0,
       lastActivity: Date.now(),
-      
-      // 登录操作
+
+      // 登录
       login: async (email: string, password: string) => {
         set((state) => {
           state.isLoading = true;
           state.error = null;
         });
-        
         try {
-          // 检查登录尝试次数
           if (get().loginAttempts >= MAX_LOGIN_ATTEMPTS) {
             throw new Error('登录尝试次数过多，请稍后再试');
           }
-          
-          // 调用登录API
           const { user, tokens } = await authService.login(email, password);
-          
-          // 通过tokenManager存储tokens
           tokenManager.setTokenPair(tokens.accessToken, tokens.refreshToken);
-          
           set((state) => {
             state.user = user as User;
             state.isAuthenticated = true;
@@ -82,6 +76,8 @@ export const useAuthStore = create<AuthState>()(
             state.lastActivity = Date.now();
             state.isLoading = false;
           });
+          // 登录成功后启动无活动定时器
+          get().setupInactivityTimer();
         } catch (error: any) {
           set((state) => {
             state.error = error.response?.data?.message || error.message || '登录失败';
@@ -91,26 +87,24 @@ export const useAuthStore = create<AuthState>()(
           throw error;
         }
       },
-      
-      // 注册操作
+
+      // 注册
       register: async (username: string, email: string, password: string) => {
         set((state) => {
           state.isLoading = true;
           state.error = null;
         });
-        
         try {
-          const { user, tokens } = await authService.register({username, email, password});
-          
-          // 通过tokenManager存储tokens
+          const { user, tokens } = await authService.register({ username, email, password });
           tokenManager.setTokenPair(tokens.accessToken, tokens.refreshToken);
-          
           set((state) => {
             state.user = user as User;
             state.isAuthenticated = true;
             state.lastActivity = Date.now();
             state.isLoading = false;
           });
+          // 注册成功后启动无活动定时器
+          get().setupInactivityTimer();
         } catch (error: any) {
           set((state) => {
             state.error = error.response?.data?.message || error.message || '注册失败';
@@ -119,14 +113,18 @@ export const useAuthStore = create<AuthState>()(
           throw error;
         }
       },
-      
-      // 登出操作
+
+      // 登出 
       logout: async () => {
         try {
           await authService.logout();
         } finally {
-          // 通过tokenManager清除tokens
           tokenManager.clearAll();
+          // 清除无活动定时器
+          if (inactivityTimer) {
+            clearTimeout(inactivityTimer);
+            inactivityTimer = null;
+          }
           set((state) => {
             state.user = null;
             state.isAuthenticated = false;
@@ -135,7 +133,7 @@ export const useAuthStore = create<AuthState>()(
           });
         }
       },
-      
+
       // 更新用户信息
       updateUser: (updatedUser) => {
         set((state) => {
@@ -144,53 +142,29 @@ export const useAuthStore = create<AuthState>()(
           }
         });
       },
-      
-      // 设置加载状态
+
       setLoading: (loading) => {
         set((state) => {
           state.isLoading = loading;
         });
       },
-      
-      // 设置错误信息
+
       setError: (error) => {
         set((state) => {
           state.error = error;
         });
       },
-      
-      // 清除错误
+
       clearError: () => {
         set((state) => {
           state.error = null;
         });
       },
-      
-      // 检查认证状态
-      checkAuth: async () => {
-        try {
-          // 检查本地token
-          if (!tokenManager.isAuthenticated()) {
-            return false;
-          }
-          
-          // 验证token有效性
-          const isValid = await authService.validateToken();
-          if (!isValid) {
-            get().logout();
-            return false;
-          }
-          
-          return true;
-        } catch {
-          return false;
-        }
-      },
-      
-      // 刷新认证状态
+
+      // 重新获取用户信息
       refreshAuth: async () => {
+        //判断双token是否都存在
         const isAuthenticated = tokenManager.isAuthenticated();
-        
         if (!isAuthenticated) {
           set((state) => {
             state.isAuthenticated = false;
@@ -198,9 +172,7 @@ export const useAuthStore = create<AuthState>()(
           });
           return;
         }
-        
         try {
-          // 获取最新的用户信息
           const user = await authService.getCurrentUser();
           set((state) => {
             state.user = user;
@@ -212,28 +184,43 @@ export const useAuthStore = create<AuthState>()(
           get().logout();
         }
       },
-      
+
       // 更新最后活动时间
       updateLastActivity: () => {
         set((state) => {
           state.lastActivity = Date.now();
         });
-        // TODO(human): 重置无活动定时器
-        // 提示：调用 resetInactivityTimer 方法
+        get().resetInactivityTimer();
       },
-      
-      // TODO(human): 实现无活动自动登出
-      // setupInactivityTimer: () => {
-      //   // 设置定时器，检查无活动时间
-      // },
-      // 
-      // resetInactivityTimer: () => {
-      //   // 重置定时器
-      // },
-      // 
-      // handleInactiveLogout: () => {
-      //   // 处理无活动登出
-      // },
+
+      setupInactivityTimer: () => {
+        if (inactivityTimer) {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = null;
+        }
+
+        const { isAuthenticated } = get();
+        if (!isAuthenticated) return;
+
+        inactivityTimer = setTimeout(() => {
+          get().handleInactiveLogout();
+        }, INACTIVITY_TIMEOUT);
+      },
+
+      resetInactivityTimer: () => {
+        get().setupInactivityTimer();
+      },
+
+      handleInactiveLogout: () => {
+        if (inactivityTimer) {
+          clearTimeout(inactivityTimer);
+          inactivityTimer = null;
+        }
+        get().logout();
+        window.dispatchEvent(new CustomEvent('auth:session-expired', {
+          detail: { message: '会话已过期，请重新登录' }
+        }));
+      },
     })),
     {
       name: 'auth-storage',
@@ -257,7 +244,7 @@ export const useAuthStore = create<AuthState>()(
 // 初始化认证系统
 export const initializeAuth = async () => {
   const store = useAuthStore.getState();
-  
+
   // 为tokenManager设置刷新回调函数
   const refreshApiFunction = async (refreshToken: string) => {
     try {
@@ -267,7 +254,7 @@ export const initializeAuth = async () => {
       return null;
     }
   };
-  
+
   // 重写tokenManager的自动刷新逻辑
   const originalScheduleRefresh = (tokenManager as any).scheduleRefresh?.bind(tokenManager);
   if (originalScheduleRefresh) {
@@ -288,22 +275,22 @@ export const initializeAuth = async () => {
       }
     };
   }
-  
+
   // 检查并刷新认证状态
   await store.refreshAuth();
-  
+
   // 监听全局登出事件
   window.addEventListener('auth:logout', () => {
     store.logout();
   });
-  
+
   // 监听权限错误事件
   window.addEventListener('auth:forbidden', (event: any) => {
     console.error('权限错误:', event.detail?.message);
     // TODO(human): 实现权限错误提示
     // 提示：显示toast或弹窗提醒用户
   });
-  
+
   // TODO(human): 实现活动监听
   // 提示：监听用户鼠标、键盘活动，更新lastActivity
   // const events = ['mousedown', 'keydown', 'scroll', 'touchstart'];

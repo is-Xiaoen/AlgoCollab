@@ -1,4 +1,4 @@
-// 用户信息接口
+//登录用户
 export interface IUser {
   id: number;
   user_id?:number;
@@ -9,25 +9,23 @@ export interface IUser {
   last_login_at: string;  
 }
 
-
-
-//登录成功后的数据接口
+//登录data
 export interface ILoginData {
   token: string;
   refresh_token: string;
-  expires_at: string; // 或者使用 Date 类型
+  expires_at: string;  
   token_type: string;
   user: IUser;
 }
 
-// 登录请求的响应体接口
+// 登录响应
  export interface ILoginResponse {
   code: number;
   message: string;
   data: ILoginData;
 }
 
- // 用户信息接口
+ // 注册用户信息
 export interface IRegisterUser {
   id: number;
   created_at: string;  
@@ -42,7 +40,7 @@ export interface IRegisterUser {
   last_login_at: string | null; 
 }
 
-//注册成功后的数据体接口
+//注册data
 export interface IRegisterData {
   access_token: string;
   refresh_token: string;
@@ -50,13 +48,14 @@ export interface IRegisterData {
   user: IRegisterUser;
 }
 
-//注册接口的完整响应体接口
+//注册响应
 export interface IRegisterResponse {
   code: number;
   data: IRegisterData;
   message: string;
 }
 
+//token刷新data
 export interface IRefreshTokenData {
   access_token: string;
   refresh_token: string;
@@ -64,7 +63,7 @@ export interface IRefreshTokenData {
   user: IRegisterUser;
 }
 
-
+//token刷新响应
 export interface IRefreshTokenResponse {
   code: number;
   data: IRefreshTokenData;
@@ -72,7 +71,7 @@ export interface IRefreshTokenResponse {
 }
 
 
-//用户信息核心数据接口
+//用户data
 export interface IUserInfo {
   email: string;
   role: string;
@@ -80,7 +79,7 @@ export interface IUserInfo {
   username: string;
 }
 
-//获取用户信息的API响应体接口
+//获取用户响应
 export interface IUserInfoResponse {
   code: number;
   data: IUserInfo;
