@@ -15,9 +15,8 @@ export default defineConfig({
     port: 5173, // 前端开发服务器端口
     proxy: {
       '/api': {
-        target: 'http://localhost:8080', // 后端服务地址
+        target: 'https://f0194b2bf42b.ngrok-free.app',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '') // 去掉 /api 前缀
       }
     }
   }

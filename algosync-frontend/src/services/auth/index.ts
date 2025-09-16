@@ -38,7 +38,6 @@ class AuthService {
 
   /**
    * 注册API调用
-   * @returns 返回标准化的token对象
    */
   async register(userData: {
     username: string;
@@ -69,7 +68,6 @@ class AuthService {
 
   /**
    * 刷新Token API调用
-   * @returns 返回新的token对
    */
   async refreshToken(refreshToken: string): Promise<TokenPair> {
     try {

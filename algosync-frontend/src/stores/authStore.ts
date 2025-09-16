@@ -202,7 +202,6 @@ export const useAuthStore = create<AuthState>()(
         try {
           // 获取最新的用户信息
           const user = await authService.getCurrentUser();
-          
           set((state) => {
             state.user = user;
             state.isAuthenticated = true;
@@ -219,7 +218,6 @@ export const useAuthStore = create<AuthState>()(
         set((state) => {
           state.lastActivity = Date.now();
         });
-        
         // TODO(human): 重置无活动定时器
         // 提示：调用 resetInactivityTimer 方法
       },
