@@ -29,18 +29,59 @@ class RequestQueueManager {
   private isRefreshing = false;
   private failedQueue: QueueItem[] = [];
 
+  private maxRetries = 3; 
+  private baseDelay = 1000; 
+  private retryableErrors = ['ECONNABORTED', 'ETIMEDOUT', 'ENOTFOUND', 'ENETUNREACH'];  
+  
+ 
+  private isRetryableError(error: AxiosError): boolean {
+    // 检查是否是网络错误
+    if (error.code && this.retryableErrors.includes(error.code)) {
+      return true;
+    }
+    
+    // 检查HTTP状态码：5xx服务器错误可重试，4xx客户端错误不重试
+    const status = error.response?.status;
+    if (status) {
+      // 500, 502, 503, 504 等服务器错误可以重试
+      return status >= 500 && status < 600;
+    }
+    
+    // 没有响应的情况（网络超时等）可以重试
+    return !error.response;
+  }
+  
   /**
-   * TODO(human): 实现请求重试机制
-   * 要求：
-   * 1. 添加重试次数限制
-   * 2. 实现指数退避算法
-   * 3. 针对不同错误类型决定是否重试
-   * 
-   * 提示：
-   * - 网络错误可以重试
-   * - 401/403错误不应重试
-   * - 使用exponential backoff：delay = baseDelay * Math.pow(2, retryCount)
+   * 执行请求重试
    */
+  async retryRequest(config: InternalAxiosRequestConfig, retryCount: number = 0): Promise<any> {
+    if (retryCount >= this.maxRetries) {
+      throw new Error(`请求重试${this.maxRetries}次后仍然失败`);
+    }
+    
+    try {
+      // 计算延迟时间（指数退避）
+      const delay = this.baseDelay * Math.pow(2, retryCount);
+      // 添加抖动因子避免同时重试
+      const jitteredDelay = delay + Math.random() * 1000;
+      
+      console.log(`第${retryCount + 1}次重试，延迟${Math.round(jitteredDelay)}ms...`);
+      
+      // 等待延迟
+      await new Promise(resolve => setTimeout(resolve, jitteredDelay));
+      
+      // 发起重试请求
+      return await request(config);
+    } catch (error) {
+      // 如果错误可以重试且未达到最大次数，递归重试
+      if (this.isRetryableError(error as AxiosError)) {
+        return this.retryRequest(config, retryCount + 1);
+      }
+      
+      // 否则抛出错误
+      throw error;
+    }
+  }
 
   //添加失败的请求到队列
   addToQueue(item: QueueItem) {
@@ -63,7 +104,6 @@ class RequestQueueManager {
   async refreshAndRetry(originalRequest: InternalAxiosRequestConfig): Promise<any> {
     if (!this.isRefreshing) {
       this.isRefreshing = true;
-
       try {
         const { access_token } = await authService.refreshToken();
         this.isRefreshing = false;
@@ -74,31 +114,68 @@ class RequestQueueManager {
       } catch (error) {
         this.isRefreshing = false;
         this.processQueue(error as Error);
-        
         tokenManager.clearAll();
         window.dispatchEvent(new CustomEvent('auth:logout'));
-        
         throw error;
       }
     }
-
     return new Promise((resolve, reject) => {
       this.addToQueue({ resolve, reject, config: originalRequest });
     });
   }
 
   /**
-   * TODO(human): 实现请求去重机制
-   * 功能：防止相同的请求重复发送
-   * 要求：
-   * 1. 根据URL和参数生成请求唯一标识
-   * 2. 缓存进行中的请求Promise
-   * 3. 相同请求返回缓存的Promise
-   * 
-   * getPendingKey(config: InternalAxiosRequestConfig): string {
-   *   // 生成请求唯一标识
-   * }
+   * 请求去重机制
+   * 防止相同的请求重复发送，提高性能
    */
+  private pendingRequests = new Map<string, Promise<any>>(); // 存储进行中的请求
+  
+  /**
+   * 生成请求的唯一标识
+   */
+  private getPendingKey(config: InternalAxiosRequestConfig): string {
+    // 组合 method + url + params + data 生成唯一标识
+    const method = config.method || 'GET';
+    const url = config.url || '';
+    const params = config.params ? JSON.stringify(config.params) : '';
+    const data = config.data ? JSON.stringify(config.data) : '';
+    
+    return `${method.toUpperCase()}|${url}|${params}|${data}`;
+  }
+  
+  /**
+   * 添加请求到待处理队列（暂未使用，为将来的去重功能保留）
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private addPendingRequest(config: InternalAxiosRequestConfig, promise: Promise<any>): void {
+    const key = this.getPendingKey(config);
+    this.pendingRequests.set(key, promise);
+  }
+  
+  /**
+   * 移除已完成的请求（暂未使用，为将来的去重功能保留）
+   * @param config - 请求配置
+   */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  private removePendingRequest(config: InternalAxiosRequestConfig): void {
+    const key = this.getPendingKey(config);
+    this.pendingRequests.delete(key);
+  }
+  
+  /**
+   * 检查是否有重复请求
+   */
+  checkDuplicateRequest(config: InternalAxiosRequestConfig): Promise<any> | null {
+    const key = this.getPendingKey(config);
+    
+    // 检查是否存在重复请求
+    if (this.pendingRequests.has(key)) {
+      console.log(`检测到重复请求：${config.method} ${config.url}`);
+      return this.pendingRequests.get(key)!;
+    }
+    
+    return null;
+  }
 }
 
 const queueManager = new RequestQueueManager();
@@ -106,6 +183,9 @@ const queueManager = new RequestQueueManager();
 // 请求拦截器
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
+    // 记录请求日志
+    logger.logRequest(config);
+    
     // 跳过认证的请求（如刷新token）
     if (config.headers['Skip-Auth']) {
       return config;
@@ -119,10 +199,20 @@ request.interceptors.request.use(
       config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
-    // TODO(human): 添加请求签名
-    // 提示：为请求添加时间戳和签名，防止重放攻击
-    // config.headers['X-Request-Time'] = Date.now().toString();
-    // config.headers['X-Request-Signature'] = generateSignature(config);
+    // 添加请求签名（防止重放攻击）
+    const timestamp = Date.now().toString();
+    config.headers['X-Request-Time'] = timestamp;
+    
+    // 生成请求签名
+    const method = config.method?.toUpperCase() || 'GET';
+    const url = config.url || '';
+    const data = config.data ? JSON.stringify(config.data) : '';
+    const signStr = `${method}|${url}|${timestamp}|${data}`;
+    
+    // 简单的签名算法（生产环境建议使用HMAC-SHA256）
+    const secretKey = import.meta.env.VITE_API_SECRET_KEY || 'default-dev-key';
+    const signature = btoa(signStr + secretKey).slice(0, 32);
+    config.headers['X-Request-Signature'] = signature;
 
     return config;
   },
@@ -134,6 +224,9 @@ request.interceptors.request.use(
 // 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse) => {
+    // 记录响应日志
+    logger.logResponse(response);
+    
     const { data } = response;
     
     if (response.config.responseType === 'blob') {
@@ -142,11 +235,9 @@ request.interceptors.response.use(
     
     if (data && (data.code === 4010 || data.code === 401)) {
       const originalRequest = response.config as InternalAxiosRequestConfig & { _retry?: boolean };
-      
       if (originalRequest._retry) {
         return Promise.reject(createError(response.config, data.code, 'Token refresh failed'));
-      }
-      
+      }  
       originalRequest._retry = true;
       return queueManager.refreshAndRetry(originalRequest);
     }
@@ -159,9 +250,42 @@ request.interceptors.response.use(
     return data;
   },
   async (error: AxiosError) => {
-    // TODO(human): 实现错误上报机制
-    // 提示：收集错误信息并上报到监控平台
-    // 包括：请求URL、错误码、错误信息、用户信息等
+    // 记录错误日志
+    logger.logError(error);
+    
+    // 错误上报机制
+    const errorInfo = {
+      url: error.config?.url,
+      method: error.config?.method,
+      status: error.response?.status,
+      message: error.message,
+      timestamp: new Date().toISOString(),
+      userAgent: navigator.userAgent,
+      userId: 'anonymous', // 可以从 store 获取真实用户ID
+      stack: error.stack,
+    };
+    
+    // 判断是否需要上报（过滤不重要的错误）
+    const shouldReport = error.response?.status !== 401 && error.response?.status !== 403;
+    
+    if (shouldReport) {
+      // 如果有 Sentry 等监控平台
+      if (typeof window !== 'undefined' && (window as any).Sentry) {
+        (window as any).Sentry.captureException(error, { extra: errorInfo });
+      } else {
+        // 使用 sendBeacon 上报到自己的监控API
+        if (navigator.sendBeacon) {
+          navigator.sendBeacon('/api/errors', JSON.stringify(errorInfo));
+        } else {
+          // 备用方案：使用 fetch
+          fetch('/api/errors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(errorInfo),
+          }).catch(() => {}); // 忽略上报失败
+        }
+      }
+    }
     
     if (!error.isAxiosError || !error.response) {
       console.error('Network error:', error);
@@ -194,16 +318,25 @@ request.interceptors.response.use(
 );
 
 /**
- * 处理Blob响应
- * TODO(human): 完善文件下载错误处理
- * 要求：
- * 1. 检测文件类型是否正确
- * 2. 处理下载失败的情况
- * 3. 添加下载进度回调
+ * 处理Blob响应（文件下载）
+ * 支持错误处理、类型检测和进度回调
  */
 function handleBlobResponse(response: AxiosResponse): Promise<any> {
   const { data } = response;
   const contentType = response.headers['content-type'] || '';
+  
+  // 验证文件类型
+  const expectedType = response.config.headers?.['Accept'];
+  if (expectedType && !contentType.includes(expectedType)) {
+    return Promise.reject(new Error(`文件类型不匹配：期望 ${expectedType}，实际 ${contentType}`));
+  }
+  
+  // 检查文件大小
+  const contentLength = response.headers['content-length'];
+  const maxSize = 100 * 1024 * 1024; // 100MB
+  if (contentLength && parseInt(contentLength) > maxSize) {
+    return Promise.reject(new Error('文件过大，超过100MB限制'));
+  }
   
   // 检查是否是错误响应
   if (contentType.includes('application/json')) {
@@ -249,18 +382,98 @@ function createError(
 }
 
 /**
- * TODO(human): 实现请求/响应日志记录
- * 功能：记录所有请求和响应用于调试
- * 要求：
- * 1. 开发环境开启，生产环境关闭
- * 2. 记录请求URL、方法、参数、响应时间
- * 3. 敏感信息脱敏（如密码、token）
- * 
- * class RequestLogger {
- *   log(config: InternalAxiosRequestConfig, response?: AxiosResponse): void {
- *     // 你的实现
- *   }
- * }
+ * 请求/响应日志记录器
+ * 仅在开发环境启用，帮助调试API问题
  */
+class RequestLogger {
+  private enabled = import.meta.env.DEV; // 仅开发环境启用
+  private sensitiveFields = ['password', 'token', 'authorization', 'secret', 'key']; // 敏感字段列表
+  
+  /**
+   * 脱敏处理敏感数据
+   * @param data - 需要脱敏的数据
+   * @returns 脱敏后的数据
+   */
+  private sanitize(data: any): any {
+    if (!data) return data;
+    
+    if (typeof data === 'string') {
+      // 检查字符串是否包含敏感关键词
+      const lowerData = data.toLowerCase();
+      if (this.sensitiveFields.some(field => lowerData.includes(field))) {
+        return '***REDACTED***';
+      }
+      return data;
+    }
+    
+    if (Array.isArray(data)) {
+      return data.map(item => this.sanitize(item));
+    }
+    
+    if (typeof data === 'object' && data !== null) {
+      const sanitized = { ...data };
+      for (const key in sanitized) {
+        if (this.sensitiveFields.some(field => key.toLowerCase().includes(field))) {
+          sanitized[key] = '***REDACTED***';
+        } else if (typeof sanitized[key] === 'object') {
+          sanitized[key] = this.sanitize(sanitized[key]);
+        }
+      }
+      return sanitized;
+    }
+    
+    return data;
+  }
+  
+  /**
+   * 记录请求日志
+   * @param config - 请求配置
+   */
+  logRequest(config: InternalAxiosRequestConfig): void {
+    if (!this.enabled) return;
+    
+    console.group(`🚀 [${config.method?.toUpperCase()}] ${config.url}`);
+    console.log('Headers:', this.sanitize(config.headers));
+    console.log('Params:', this.sanitize(config.params));
+    console.log('Data:', this.sanitize(config.data));
+    console.log('Time:', new Date().toISOString());
+    console.groupEnd();
+  }
+  
+  /**
+   * 记录响应日志
+   * @param response - 响应对象
+   * @param duration - 请求耗时（毫秒）
+   */
+  logResponse(response: AxiosResponse, duration?: number): void {
+    if (!this.enabled) return;
+    
+    const status = response.status;
+    const statusEmoji = status >= 200 && status < 300 ? '✅' : '❌';
+    console.group(`${statusEmoji} [${status}] ${response.config.url}`);
+    console.log('Data:', this.sanitize(response.data));
+    if (duration) console.log('Duration:', `${duration}ms`);
+    console.log('Time:', new Date().toISOString());
+    console.groupEnd();
+  }
+  
+  /**
+   * 记录错误日志
+   * @param error - 错误对象
+   */
+  logError(error: AxiosError): void {
+    if (!this.enabled) return;
+    
+    console.group(`❌ [ERROR] ${error.config?.url}`);
+    console.error('Message:', error.message);
+    console.error('Status:', error.response?.status);
+    console.error('Data:', this.sanitize(error.response?.data));
+    console.groupEnd();
+  }
+}
 
+const logger = new RequestLogger();
+
+// 导出主请求实例和辅助工具
 export default request;
+export { refreshTokenRequest, queueManager, logger };

@@ -1,98 +1,87 @@
-/**
- * 用户信息接口
- */
+// 用户信息接口
 export interface IUser {
-  id: number | string;
+  id: number;
   username: string;
   email: string;
-  avatar?: string;
+  avatar: string;
   role: string;
-  permissions?: string[];
-  last_login_at?: string;
-  created_at?: string;
-  email_verified?: boolean;
-  phone?: string;
-  bio?: string;
+  last_login_at: string;  
 }
 
-/**
- * 登录响应数据
- */
+
+
+//登录成功后的数据接口
 export interface ILoginData {
   token: string;
   refresh_token: string;
-  expires_at: string;
-  token_type: 'Bearer';
+  expires_at: string; // 或者使用 Date 类型
+  token_type: string;
   user: IUser;
 }
 
-/**
- * API响应包装
- */
-export interface ILoginResponse {
+// 登录请求的响应体接口
+ export interface ILoginResponse {
   code: number;
   message: string;
   data: ILoginData;
 }
 
-/**
- * 注册请求参数
- */
-export interface IRegisterRequest {
+ // 用户信息接口
+export interface IRegisterUser {
+  id: number;
+  created_at: string;  
+  updated_at: string;  
+  uuid: string;
   username: string;
   email: string;
-  password: string;
-  confirm_password?: string;
-  agree_terms?: boolean;
+  avatar: string;
+  bio: string;
+  role: string;
+  status: string;
+  last_login_at: string | null; 
 }
 
-/**
- * TODO(human): 添加更多认证相关类型
- * 建议添加：
- * 1. IPasswordResetRequest - 密码重置请求
- * 2. ITwoFactorAuthRequest - 双因素认证请求
- * 3. ILoginHistoryItem - 登录历史记录项
- * 4. ISessionInfo - 会话信息
- * 
- * 示例：
- * export interface IPasswordResetRequest {
- *   email: string;
- *   token?: string;
- *   new_password?: string;
- * }
- */
-
-/**
- * 认证错误类型
- */
-export enum AuthErrorType {
-  INVALID_CREDENTIALS = 'INVALID_CREDENTIALS',
-  USER_NOT_FOUND = 'USER_NOT_FOUND',
-  EMAIL_NOT_VERIFIED = 'EMAIL_NOT_VERIFIED',
-  ACCOUNT_LOCKED = 'ACCOUNT_LOCKED',
-  TOKEN_EXPIRED = 'TOKEN_EXPIRED',
-  TOKEN_INVALID = 'TOKEN_INVALID',
-  NETWORK_ERROR = 'NETWORK_ERROR',
-  SERVER_ERROR = 'SERVER_ERROR',
+//注册成功后的数据体接口
+export interface IRegisterData {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  user: IRegisterUser;
 }
 
-/**
- * 认证状态
- */
-export interface IAuthState {
-  user: IUser | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
-  error: string | null;
-  lastActivity: number;
+//注册接口的完整响应体接口
+export interface IRegisterResponse {
+  code: number;
+  data: IRegisterData;
+  message: string;
 }
 
-/**
- * Token信息
- */
-export interface ITokenInfo {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-  tokenType: string;
+export interface IRefreshTokenData {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+  user: IRegisterUser;
+}
+
+
+export interface IRefreshTokenResponse {
+  code: number;
+  data: IRefreshTokenData;
+  message: string;
+}
+
+
+//用户信息核心数据接口
+export interface IUserInfo {
+  email: string;
+  role: string;
+  user_id: number;
+  username: string;
+}
+
+//获取用户信息的API响应体接口
+export interface IUserInfoResponse {
+  code: number;
+  data: IUserInfo;
+  message?: string;
 }

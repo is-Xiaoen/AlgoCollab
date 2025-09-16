@@ -1,67 +1,45 @@
 import request from '../../utils/request';
-import { ILoginResponse, IUser } from './types';
+import type {  ILoginData, ILoginResponse, IRefreshTokenData, IUserInfoResponse, IUserInfo, IRegisterData, IRegisterResponse } from './types';
 import tokenManager from '../../utils/tokenManager';
 
 /**
  * 认证服务API
  */
 class AuthService {
-  /**
-   * 用户登录
-   * @param email 邮箱
-   * @param password 密码
-   */
   async login(email: string, password: string): Promise<ILoginResponse> {
     try {
       const response = await request.post<ILoginResponse>('/api/v1/auth/login', {
         email,
         password,
       });
-
-      // 存储Token
-      if (response.data) {
-        const { token, refresh_token } = response.data;
+      const Data = response.data as unknown as  ILoginData
+      if (Data) {
+        const { token, refresh_token } = Data;
         tokenManager.setTokenPair(token, refresh_token);
       }
-
-      return response;
+      return response.data;
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
     }
   }
 
-  /**
-   * TODO(human): 实现记住我功能
-   * 要求：
-   * 1. 添加 rememberMe 参数到登录方法
-   * 2. 根据 rememberMe 决定Token存储策略
-   * 3. 记住的用户信息加密存储
-   * 
-   * 提示：
-   * - rememberMe=true: 使用localStorage
-   * - rememberMe=false: 使用sessionStorage或内存
-   */
-
-  /**
-   * 用户注册
-   * @param userData 注册信息
-   */
   async register(userData: {
     username: string;
     email: string;
     password: string;
-  }): Promise<ILoginResponse> {
+  }): Promise<IRegisterResponse> {
     try {
-      const response = await request.post<ILoginResponse>('/api/v1/auth/register', userData);
+      const response = await request.post<IRegisterResponse>('/api/v1/auth/register', userData);
 
       // 注册成功后自动登录
-      if (response.data) {
-        const { token, refresh_token } = response.data;
-        tokenManager.setTokenPair(token, refresh_token);
+      const Data = response.data as unknown as  IRegisterData
+      if (Data) {
+        const { access_token, refresh_token } = Data;
+        tokenManager.setTokenPair(access_token, refresh_token);
       }
 
-      return response;
+      return response.data;
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
@@ -90,11 +68,9 @@ class AuthService {
    */
   async refreshToken(): Promise<{ access_token: string; refresh_token: string }> {
     const refreshToken = tokenManager.getRefreshToken();
-    
     if (!refreshToken) {
-      throw new Error('No refresh token available');
+      throw new Error('没有有效的令牌');
     }
-
     try {
       const response = await request.post<{
         code: number;
@@ -103,8 +79,10 @@ class AuthService {
         refresh_token: refreshToken,
       });
 
-      if (response.data) {
-        const { access_token, refresh_token } = response.data;
+      const Data = response.data as unknown as IRefreshTokenData
+
+      if (Data) {
+        const { access_token, refresh_token } = Data;
         tokenManager.setTokenPair(access_token, refresh_token);
         return { access_token, refresh_token };
       }
@@ -138,76 +116,13 @@ class AuthService {
   /**
    * 获取当前用户信息
    */
-  async getCurrentUser(): Promise<IUser> {
+  async getCurrentUser(): Promise<IUserInfoResponse> {
     try {
-      const response = await request.get<{ code: number; data: IUser }>('/api/v1/auth/me');
+      const response = await request.get<{ code: number; data: IUserInfo }>('/api/v1/auth/me');
       return response.data;
     } catch (error) {
       console.error('Failed to get current user:', error);
       throw error;
-    }
-  }
-
-  /**
-   * TODO(human): 实现密码重置功能
-   * 功能：通过邮箱重置密码
-   * 要求：
-   * 1. 创建 requestPasswordReset 方法（发送重置邮件）
-   * 2. 创建 resetPassword 方法（使用token重置密码）
-   * 3. 创建 validateResetToken 方法（验证重置token是否有效）
-   * 
-   * async requestPasswordReset(email: string): Promise<void> {
-   *   // 你的实现
-   * }
-   * 
-   * async resetPassword(token: string, newPassword: string): Promise<void> {
-   *   // 你的实现
-   * }
-   */
-
-  /**
-   * 更新用户信息
-   */
-  async updateProfile(userData: Partial<IUser>): Promise<IUser> {
-    try {
-      const response = await request.put<{ code: number; data: IUser }>(
-        '/api/v1/auth/profile',
-        userData
-      );
-      return response.data;
-    } catch (error) {
-      console.error('Failed to update profile:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * TODO(human): 实现账号安全功能
-   * 功能：增强账号安全性
-   * 要求：
-   * 1. 创建 changePassword 方法（修改密码）
-   * 2. 创建 enableTwoFactor 方法（启用双因素认证）
-   * 3. 创建 getLoginHistory 方法（获取登录历史）
-   * 4. 创建 revokeSession 方法（撤销特定会话）
-   * 
-   * 示例：
-   * async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-   *   // 你的实现
-   * }
-   */
-
-  /**
-   * 检查邮箱是否已注册
-   */
-  async checkEmailExists(email: string): Promise<boolean> {
-    try {
-      const response = await request.get<{ code: number; data: { exists: boolean } }>(
-        `/api/v1/auth/check-email?email=${encodeURIComponent(email)}`
-      );
-      return response.data.exists;
-    } catch (error) {
-      console.error('Failed to check email:', error);
-      return false;
     }
   }
 
