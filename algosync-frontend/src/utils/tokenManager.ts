@@ -1,13 +1,70 @@
-import { 
-  setTokens, 
-  getAccessToken, 
-  getRefreshToken, 
-  clearTokens,
-  isTokenExpired,
-  getTokenRemainingTime,
-  parseJWT,
-  initStorageListener
-} from '../stores/token';
+/**
+ * 统一的Token管理器 - 集成了存储、刷新、生命周期管理
+ * 这是所有token操作的唯一入口
+ */
+
+import type { JWTPayload, RefreshTokenCallback } from '../types/token';
+import { TOKEN_KEYS } from '../types/token';
+
+// 内存中的Access Token（防XSS）
+let accessTokenInMemory: string | null = null;
+
+// 简单的加密解密函数
+const encode = (str: string): string => {
+  try {
+    return btoa(encodeURIComponent(str));
+  } catch {
+    return str;
+  }
+};
+
+const decode = (str: string): string => {
+  try {
+    return decodeURIComponent(atob(str));
+  } catch {
+    return str;
+  }
+};
+
+// JWT解析函数
+const parseJWT = (token: string): JWTPayload | null => {
+  try {
+    const base64Url = token.split('.')[1];
+    const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    const jsonPayload = decodeURIComponent(
+      atob(base64).split('').map((c) => {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join('')
+    );
+    return JSON.parse(jsonPayload);
+  } catch {
+    return null;
+  }
+};
+
+// 检查Token是否过期
+const isTokenExpired = (token: string): boolean => {
+  const payload = parseJWT(token);
+  if (!payload || !payload.exp) return true;
+  
+  const expirationTime = payload.exp * 1000;
+  const currentTime = Date.now();
+  
+  const bufferTime = 5 * 60 * 1000; // 5分钟缓冲时间
+  return currentTime >= expirationTime - bufferTime;
+};
+
+// 获取Token剩余时间
+const getTokenRemainingTime = (token: string): number => {
+  const payload = parseJWT(token);
+  if (!payload || !payload.exp) return 0;
+  
+  const expirationTime = payload.exp * 1000;
+  const currentTime = Date.now();
+  const remaining = expirationTime - currentTime;
+  
+  return remaining > 0 ? remaining : 0;
+};
 
 class TokenManager {
   private static instance: TokenManager;
@@ -28,46 +85,63 @@ class TokenManager {
   }
 
   private initCrossTabSync() {
-    initStorageListener(() => {
-      this.onLogout();
-    });
+    // 监听localStorage变化，实现跨标签页同步
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === TOKEN_KEYS.REFRESH_TOKEN && !event.newValue) {
+        accessTokenInMemory = null;
+        this.onLogout();
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
   }
 
   /**
-   * TODO(human): 实现安全的Token存储策略
-   * 要求：
-   * 1. 实现setSecureTokens方法，增强安全性
-   * 2. 考虑使用sessionStorage作为备选方案
-   * 3. 实现Token指纹（fingerprint）防止CSRF攻击
-   * 
-   * 示例：
-   * setSecureTokens(accessToken: string, refreshToken: string, options?: {
-   *   rememberMe?: boolean;
-   *   fingerprint?: string;
-   * }): void {
-   *   // 你的实现
-   * }
+   * 设置token对 - 这是存储token的唯一入口
    */
-
   setTokenPair(accessToken: string, refreshToken: string) {
-    setTokens(accessToken, refreshToken);
+    // 存储tokens
+    accessTokenInMemory = accessToken;
     
+    if (refreshToken) {
+      const encodedToken = encode(refreshToken);
+      localStorage.setItem(TOKEN_KEYS.REFRESH_TOKEN, encodedToken);
+      localStorage.setItem(TOKEN_KEYS.TOKEN_TIMESTAMP, Date.now().toString());
+    }
+    
+    // 触发token更新事件
+    window.dispatchEvent(new CustomEvent('token-updated', { 
+      detail: { hasToken: true } 
+    }));
+    
+    // 调度自动刷新
     this.scheduleRefresh(accessToken);
   }
 
+  /**
+   * 获取Access Token
+   */
   getAccessToken(): string | null {
-    const token = getAccessToken();
-    
-    // TODO(human): 添加Token有效性检查
-    // 提示：检查token是否过期，如果过期则尝试刷新
-    
-    return token;
+    return accessTokenInMemory;
   }
 
+  /**
+   * 获取Refresh Token
+   */
   getRefreshToken(): string | null {
-    return getRefreshToken();
+    const encodedToken = localStorage.getItem(TOKEN_KEYS.REFRESH_TOKEN);
+    if (!encodedToken) return null;
+    
+    try {
+      return decode(encodedToken);
+    } catch {
+      return null;
+    }
   }
 
+  /**
+   * 调度token自动刷新
+   */
   private scheduleRefresh(accessToken: string) {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
@@ -76,6 +150,7 @@ class TokenManager {
     const remainingTime = getTokenRemainingTime(accessToken);
     if (remainingTime <= 0) return;
 
+    // 在过期前80%的时间或过期前10分钟刷新（取较小值）
     const refreshTime = Math.min(
       remainingTime * 0.8,
       remainingTime - 10 * 60 * 1000
@@ -89,21 +164,9 @@ class TokenManager {
   }
 
   /**
-   * TODO(human): 实现Token刷新队列管理
-   * 功能：防止并发刷新请求
-   * 要求：
-   * 1. 如果正在刷新，新请求应该等待当前刷新完成
-   * 2. 实现订阅者模式，刷新成功后通知所有等待者
-   * 3. 处理刷新失败的情况
-   * 
-   * 提示：使用 this.refreshSubscribers 数组存储等待的回调
+   * 刷新token - 通过回调函数调用API
    */
-  private onAccessTokenFetched(token: string) {
-    this.refreshSubscribers.forEach(callback => callback(token));
-    this.refreshSubscribers = [];
-  }
-
-  async refreshToken(): Promise<string | null> {
+  async refreshToken(apiRefreshFn?: RefreshTokenCallback): Promise<string | null> {
     if (this.isRefreshing && this.refreshPromise) {
       return this.refreshPromise;
     }
@@ -116,34 +179,52 @@ class TokenManager {
 
     this.isRefreshing = true;
 
-    // TODO(human): 实现实际的刷新API调用
-    // 这里需要调用后端的刷新接口
-    this.refreshPromise = new Promise((resolve) => {
-      setTimeout(() => {
-        console.log('Token refresh simulation - replace with real API call');
-        resolve(null);
-      }, 1000);
+    this.refreshPromise = new Promise(async (resolve, reject) => {
+      try {
+        if (apiRefreshFn) {
+          const result = await apiRefreshFn(refreshToken);
+          if (result) {
+            this.setTokenPair(result.accessToken, result.refreshToken);
+            this.onAccessTokenFetched(result.accessToken);
+            resolve(result.accessToken);
+          } else {
+            this.handleRefreshFailure();
+            resolve(null);
+          }
+        } else {
+          // 如果没有提供API函数，返回null
+          console.warn('No refresh API function provided');
+          resolve(null);
+        }
+      } catch (error) {
+        this.handleRefreshFailure();
+        reject(error);
+      }
     });
 
     try {
       const result = await this.refreshPromise;
       this.isRefreshing = false;
       this.refreshPromise = null;
-      
-      if (result) {
-        this.onAccessTokenFetched(result);
-      }
-      
       return result;
     } catch (error) {
       this.isRefreshing = false;
       this.refreshPromise = null;
-      this.handleRefreshFailure();
       throw error;
     }
   }
 
-  //处理刷新失败
+  /**
+   * 通知所有等待刷新的订阅者
+   */
+  private onAccessTokenFetched(token: string) {
+    this.refreshSubscribers.forEach(callback => callback(token));
+    this.refreshSubscribers = [];
+  }
+
+  /**
+   * 处理刷新失败
+   */
   private handleRefreshFailure() {
     this.clearAll();
     // 触发全局登出事件
@@ -151,41 +232,42 @@ class TokenManager {
   }
 
   /**
-   * TODO(human): 实现Token撤销功能
-   * 功能：在登出时撤销Token（通知后端）
-   * 要求：
-   * 1. 创建 revokeToken 方法
-   * 2. 调用后端的Token撤销接口
-   * 3. 确保清理本地存储
-   * 
-   * async revokeToken(): Promise<void> {
-   *   // 你的实现
-   * }
+   * 清除所有token和定时器
    */
-
-  //清除所有Token和定时器
   clearAll() {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
       this.refreshTimer = null;
     }
     
-    clearTokens();
+    // 清除存储
+    accessTokenInMemory = null;
+    localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
+    localStorage.removeItem(TOKEN_KEYS.TOKEN_TIMESTAMP);
+    
+    // 触发token清除事件
+    window.dispatchEvent(new CustomEvent('token-updated', { 
+      detail: { hasToken: false } 
+    }));
     
     this.isRefreshing = false;
     this.refreshPromise = null;
     this.refreshSubscribers = [];
   }
 
-  //登出处理
+  /**
+   * 登出处理
+   */
   private onLogout() {
     this.clearAll();
   }
 
-  //检查是否已认证
+  /**
+   * 检查是否已认证
+   */
   isAuthenticated(): boolean {
-    const accessToken = getAccessToken();
-    const refreshToken = getRefreshToken();
+    const accessToken = this.getAccessToken();
+    const refreshToken = this.getRefreshToken();
     
     if (!accessToken || !refreshToken) {
       return false;
@@ -199,34 +281,48 @@ class TokenManager {
   }
 
   /**
-   * TODO(human): 实现Token预加载功能
-   * 功能：应用启动时从存储恢复Token状态
-   * 要求：
-   * 1. 创建 initialize 方法
-   * 2. 检查localStorage中的refresh token
-   * 3. 如果存在且有效，尝试刷新获取新的access token
-   * 4. 设置自动刷新调度
-   * 
-   * async initialize(): Promise<boolean> {
-   *   // 你的实现
-   * }
+   * 从Token中解析用户信息
    */
-
-  //获取用户信息（从Token中解析）
   getUserFromToken(): any {
-    const token = getAccessToken();
+    const token = this.getAccessToken();
     if (!token) return null;
     
     const payload = parseJWT(token);
     
-    // TODO(human): 添加用户信息的类型定义和字段映射
-    // 根据你的JWT payload结构调整
     return payload ? {
       id: payload.sub,
       email: payload.email,
       username: payload.username,
       roles: payload.roles || []
     } : null;
+  }
+
+  /**
+   * 初始化token监听器
+   */
+  initTokenListener(callback: (hasToken: boolean) => void): (() => void) {
+    const handleTokenUpdate = (event: Event) => {
+      const customEvent = event as CustomEvent;
+      callback(customEvent.detail.hasToken);
+    };
+    
+    window.addEventListener('token-updated', handleTokenUpdate);
+    
+    // 返回清理函数
+    return () => {
+      window.removeEventListener('token-updated', handleTokenUpdate);
+    };
+  }
+
+  /**
+   * 检查token是否即将过期（用于主动刷新）
+   */
+  isTokenExpiring(): boolean {
+    const token = this.getAccessToken();
+    if (!token) return false;
+    
+    const remainingTime = getTokenRemainingTime(token);
+    return remainingTime <= 15 * 60 * 1000; // 15分钟内过期
   }
 }
 

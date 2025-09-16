@@ -32,16 +32,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const handleChange = (field: keyof RegisterFormData) => (
     e: React.ChangeEvent<HTMLInputElement>
   ) => {
-    // 处理不同类型的输入
     const value = field === 'agreeToTerms' ? e.target.checked : e.target.value;
     
-    // 更新表单数据
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
     
-    // 清除当前字段的错误
     if (errors[field]) {
       setErrors(prev => {
         const newErrors = { ...prev };
@@ -50,13 +47,10 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       });
     }
     
-    // 特殊处理密码字段 - 更新密码强度提示
     if (field === 'password') {
-      // 调用 getPasswordStrengthErrors 获取未满足的要求
       const strengthErrors = getPasswordStrengthErrors(value as string);
       setPasswordStrengthErrors(strengthErrors);
       
-      // 如果确认密码已填写，检查是否一致
       if (formData.confirmPassword) {
         if (value !== formData.confirmPassword) {
           setErrors(prev => ({ ...prev, confirmPassword: '两次输入的密码不一致' }));
@@ -70,7 +64,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       }
     }
     
-    // 特殊处理确认密码字段
     if (field === 'confirmPassword') {
       if (value !== formData.password) {
         setErrors(prev => ({ ...prev, confirmPassword: '两次输入的密码不一致' }));
@@ -84,13 +77,9 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     }
   };
 
-  // 高级验证逻辑 - 包含跨字段验证
   const validateField = async (field: keyof RegisterFormData) => {
     try {
-      // 使用 zod 验证单个字段
       const fieldSchema = registerSchema.pick({ [field]: true });
-      
-      // 特殊处理确认密码的验证
       if (field === 'confirmPassword') {
         if (formData.confirmPassword !== formData.password) {
           setErrors(prev => ({ ...prev, confirmPassword: '两次输入的密码不一致' }));
@@ -100,16 +89,13 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       
       fieldSchema.parse({ [field]: formData[field] });
       
-      // 验证通过，清除错误
       setErrors(prev => {
         const newErrors = { ...prev };
         delete newErrors[field];
         return newErrors;
       });
       
-      // 模拟异步验证（检查用户名/邮箱唯一性）
       if (field === 'username' && formData.username) {
-        // 模拟 API 调用
         setTimeout(() => {
           if (formData.username === 'admin' || formData.username === 'test') {
             setErrors(prev => ({ ...prev, username: '用户名已被使用' }));
@@ -118,7 +104,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
       }
       
       if (field === 'email' && formData.email) {
-        // 模拟 API 调用
         setTimeout(() => {
           if (formData.email === 'test@example.com') {
             setErrors(prev => ({ ...prev, email: '邮箱已被注册' }));
@@ -147,7 +132,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // 在尝试提交时，将所有字段标记为 touched，以便用户能看到所有错误
     const touchAllFields = () => {
         const allTouched: Partial<Record<keyof RegisterFormData, boolean>> = {};
         Object.keys(formData).forEach(key => {
@@ -159,32 +143,22 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
     try {
       setIsSubmitting(true);
       
-      // 1. 使用增强后的 Schema 进行一次性完整验证
-      // 如果验证失败，会直接抛出 ZodError，代码将跳转到 catch 块
       const validatedData = registerSchema.parse(formData);
-
-      // --- 如果代码能执行到这里，说明所有验证都已通过 ---
-      
-      // 2. 清除所有残留的错误信息
       setErrors({});
       
-      // 3. 调用父组件传递的 onSubmit 函数，并传入验证过的数据
       if (onSubmit) {
         await onSubmit(validatedData);
       }
       
-      // 4. 成功提交后重置表单状态
       setFormData({
         username: '', email: '', password: '', confirmPassword: '', agreeToTerms: false,
       });
       setTouched({});
 
     } catch (error: any) {
-      // 5. 在 catch 块中统一处理所有错误
       touchAllFields(); // 确保所有错误都能显示
 
       if (error instanceof ZodError) {
-        // A. 如果是 Zod 验证错误
         const fieldErrors: Partial<Record<keyof RegisterFormData, string>> = {};
         for (const issue of error.issues) {
           const fieldName = issue.path[0] as keyof RegisterFormData;
@@ -194,10 +168,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         }
         setErrors(fieldErrors);
       } else {
-        // B. 如果是其他错误（如网络请求失败）
         console.error('注册失败，非验证错误:', error);
-        // 可以在这里设置一个全局的错误提示，例如:
-        // setErrors({ form: '服务暂时不可用，请稍后再试' });
       }
     } finally {
       setIsSubmitting(false);
@@ -248,7 +219,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           showStrengthIndicator
         />
         
-        {/* 密码要求清单 - 使用 getPasswordStrengthErrors 的结果 */}
         {formData.password && (
           <div className="mt-2 space-y-1">
             <p className="text-xs font-medium text-gray-700">密码要求：</p>
@@ -295,7 +265,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
               </li>
             </ul>
             
-            {/* 显示当前未满足的要求数量 */}
             {passwordStrengthErrors.length > 0 && (
               <p className="text-xs text-red-500 mt-2">
                 还需满足 {passwordStrengthErrors.length} 个要求

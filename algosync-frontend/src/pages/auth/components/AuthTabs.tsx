@@ -50,20 +50,16 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
   const [previousTab, setPreviousTab] = useState<TabType>(defaultTab);
   const [hoveredTab, setHoveredTab] = useState<TabType | null>(null);
   
-  // 当外部的 defaultTab 改变时，同步更新内部状态
   React.useEffect(() => {
     setActiveTab(defaultTab);
   }, [defaultTab]);
  
-  // 使用 useRef 存储每个 tab 按钮的引用
-  // Map 结构可以方便地存储和获取每个 tab 的 DOM 元素
   const tabRefs = useRef<Map<TabType, HTMLButtonElement | null>>(new Map());
   
   const containerRef = useRef<HTMLDivElement>(null);
   
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 });
 
-  //计算指示器位置的核心函数
   const updateIndicatorPosition = useCallback((tab: TabType) => {
     const tabElement = tabRefs.current.get(tab);
     const containerElement = containerRef.current;
@@ -106,7 +102,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
   ];
 
   const handleTabChange = useCallback((tab: TabType) => {
-    // 检查是否禁用
     if (disabledTabs.includes(tab)) {
       return;
     }
@@ -115,21 +110,17 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
     setActiveTab(tab);
     onTabChange?.(tab);
     
-    // 切换 tab 时更新指示器位置
     updateIndicatorPosition(tab);
   }, [activeTab, onTabChange, updateIndicatorPosition, disabledTabs]);
 
-  // 实现键盘导航功能
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     const currentIndex = tabs.findIndex(tab => tab.key === activeTab);
     let newIndex = currentIndex;
   
     if (e.key === 'ArrowLeft') {
       e.preventDefault(); 
-      // 如果是第一个，循环到最后一个
       newIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
       
-      // 跳过禁用的标签
       while (disabledTabs.includes(tabs[newIndex].key) && newIndex !== currentIndex) {
         newIndex = newIndex === 0 ? tabs.length - 1 : newIndex - 1;
       }
@@ -137,16 +128,13 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
     
     else if (e.key === 'ArrowRight') {
       e.preventDefault();
-      // 如果是最后一个，循环到第一个
       newIndex = currentIndex === tabs.length - 1 ? 0 : currentIndex + 1;
       
-      // 跳过禁用的标签
       while (disabledTabs.includes(tabs[newIndex].key) && newIndex !== currentIndex) {
         newIndex = newIndex === tabs.length - 1 ? 0 : newIndex + 1;
       }
     }
     
-    // Enter 或 Space 键 - 激活当前聚焦的 tab
     else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       const target = e.target as HTMLElement;
@@ -157,12 +145,10 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
       }
     }
     
-    // 如果索引改变了，切换到新的 tab
     if (newIndex !== currentIndex && !disabledTabs.includes(tabs[newIndex].key)) {
       const newTab = tabs[newIndex].key;
       handleTabChange(newTab);
       
-      // 将焦点移动到新的 tab 按钮
       setTimeout(() => {
         const newTabElement = tabRefs.current.get(newTab);
         newTabElement?.focus();
@@ -172,27 +158,21 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
 
   //初始化和响应式更新指示器位置
   useEffect(() => {
-    // 初始化时设置指示器位置
     updateIndicatorPosition(activeTab);
-    // 处理窗口大小变化
     const handleResize = () => {
       updateIndicatorPosition(activeTab);
     };
-    // 添加事件监听器
     window.addEventListener('resize', handleResize);
-    // 清理函数：移除事件监听器
     return () => {
       window.removeEventListener('resize', handleResize);
     };
   }, [activeTab, updateIndicatorPosition]);
 
-  // 获取当前进度百分比
   const getProgressPercentage = () => {
     const currentIndex = tabs.findIndex(t => t.key === activeTab);
     return ((currentIndex + 1) / tabs.length) * 100;
   };
 
-  // 获取变体样式
   const getVariantStyles = () => {
     switch (variant) {
       case 'pills':
@@ -230,7 +210,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
 
   return (
     <div className="w-full max-w-md mx-auto">
-      {/* 扩展功能区 */}
       <div className="mb-4 space-y-2">
         {/* 1. Tab 数量指示器 */}
         {showIndicator && (
@@ -315,7 +294,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
               tabIndex={isActive ? 0 : -1}
               data-tab={tab.key}
             >
-            {/* 图标和文字布局 */}
             <span className="flex items-center justify-center gap-2">
               {/* 条件渲染图标 - 支持多种类型 */}
               {iconType !== 'none' && (
@@ -355,7 +333,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
                           }
                         `}
                       />
-                      {/* 脉冲动画 - 仅在激活时显示 */}
                       {isActive && !isDisabled && (
                         <span className="absolute inset-0 -z-10">
                           <span className="absolute inset-0 bg-blue-400 rounded-full animate-ping opacity-20" />
@@ -366,7 +343,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
                 </>
               )}
               
-              {/* 文字标签 */}
               <span className={`
                 transition-all duration-200
                 ${isActive ? 'font-semibold' : 'font-medium'}
@@ -374,13 +350,11 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
                 {tab.label}
               </span>
               
-              {/* 禁用标记 */}
               {isDisabled && (
                 <span className="ml-1 text-xs text-gray-400">(禁用)</span>
               )}
             </span>
             
-            {/* 工具提示 - 悬停时显示描述 */}
             {showTooltips && hoveredTab === tab.key && tab.description && (
               <span className="
                 absolute top-full left-1/2 transform -translate-x-1/2 mt-2
@@ -395,13 +369,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
             </button>
           );
         })}
-
-        
-        {/* 【实现9】: 滑动下划线指示器
-            - 使用绝对定位 (absolute bottom-0)
-            - 动态设置 left 和 width 样式
-            - transition-all 实现平滑动画
-        */}
         <span 
           className="absolute bottom-0 h-0.5 bg-blue-600 transition-all duration-300 ease-in-out"
           style={{
@@ -412,9 +379,7 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
         />
       </div>
 
-      {/* Tab 内容区域 - 实现平滑切换动画 */}
       <div className="mt-6 relative overflow-hidden">
-        {/* 内容容器 - 设置最小高度防止跳动 */}
         <div className="relative" style={{ minHeight: '200px' }}>
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key;
@@ -432,16 +397,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
                   return 'opacity-0 transition-opacity duration-300 ease-in absolute inset-0';
                 } else {
                   return 'opacity-0 absolute inset-0 pointer-events-none';
-                }
-              } else if (animationDirection === 'vertical') {
-                // 垂直滑动动画
-                if (isActive) {
-                  return 'opacity-100 translate-y-0 transition-all duration-500 ease-out delay-75';
-                } else if (isPrevious) {
-                  const direction = tabIndex < activeIndex ? '-translate-y-full' : 'translate-y-full';
-                  return `opacity-0 ${direction} transition-all duration-300 ease-in absolute inset-0`;
-                } else {
-                  return 'opacity-0 translate-y-full absolute inset-0 pointer-events-none';
                 }
               } else {
                 // 默认水平滑动动画
@@ -477,7 +432,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
                   transition-opacity duration-300
                   ${isActive ? 'opacity-100 delay-200' : 'opacity-0'}
                 `}>
-                  {/* 通过key来渲染不同的内容，这里的children是传入的组件对象， */}
                   {children[tab.key]} 
                 </div>
               </div>
@@ -485,7 +439,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
           })}
         </div>
         
-        {/* 加载指示器 - 可以通过传入 isLoading prop 来控制显示 */}
       </div>
 
      
