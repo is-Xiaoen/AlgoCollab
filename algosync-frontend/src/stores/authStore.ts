@@ -5,13 +5,11 @@ import authService from '../services/auth';
 import type { IUser, IRegisterUser, IUserInfo } from '../services/auth/types';
 import tokenManager from '../utils/tokenManager';
 
-// 统一的用户类型 - 合并登录和注册用户的所有可能字段
 type User = (IRegisterUser | IUser | IUserInfo) & {
   user_id?: number; // 兼容字段
 };
 
 interface AuthState {
-  // 状态
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
@@ -19,7 +17,6 @@ interface AuthState {
   loginAttempts: number;
   lastActivity: number;
 
-  // 操作
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -42,14 +39,11 @@ const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 // 最大登录尝试次数
 const MAX_LOGIN_ATTEMPTS = 5;
 
-// 无活动定时器引用（存储在模块级别，因为定时器不能序列化）
 let inactivityTimer: NodeJS.Timeout | null = null;
 
-// 创建认证 store，使用 persist 和 immer 中间件
 export const useAuthStore = create<AuthState>()(
   persist(
     immer((set, get) => ({
-      // 初始状态
       user: null,
       isAuthenticated: false,
       isLoading: false,
@@ -76,7 +70,6 @@ export const useAuthStore = create<AuthState>()(
             state.lastActivity = Date.now();
             state.isLoading = false;
           });
-          // 登录成功后启动无活动定时器
           get().setupInactivityTimer();
         } catch (error: any) {
           set((state) => {
@@ -103,7 +96,6 @@ export const useAuthStore = create<AuthState>()(
             state.lastActivity = Date.now();
             state.isLoading = false;
           });
-          // 注册成功后启动无活动定时器
           get().setupInactivityTimer();
         } catch (error: any) {
           set((state) => {
@@ -120,7 +112,6 @@ export const useAuthStore = create<AuthState>()(
           await authService.logout();
         } finally {
           tokenManager.clearAll();
-          // 清除无活动定时器
           if (inactivityTimer) {
             clearTimeout(inactivityTimer);
             inactivityTimer = null;
@@ -163,7 +154,6 @@ export const useAuthStore = create<AuthState>()(
 
       // 重新获取用户信息
       refreshAuth: async () => {
-        //判断双token是否都存在
         const isAuthenticated = tokenManager.isAuthenticated();
         if (!isAuthenticated) {
           set((state) => {
@@ -230,7 +220,6 @@ export const useAuthStore = create<AuthState>()(
         lastActivity: state.lastActivity,
       }),
       onRehydrateStorage: () => (state) => {
-        // 存储恢复后的处理
         if (state) {
           // TODO(human): 实现自动刷新认证
           // 提示：如果有token，尝试刷新用户信息
@@ -244,8 +233,6 @@ export const useAuthStore = create<AuthState>()(
 // 初始化认证系统
 export const initializeAuth = async () => {
   const store = useAuthStore.getState();
-
-  // 为tokenManager设置刷新回调函数
   const refreshApiFunction = async (refreshToken: string) => {
     try {
       return await authService.refreshToken(refreshToken);
@@ -259,7 +246,6 @@ export const initializeAuth = async () => {
   const originalScheduleRefresh = (tokenManager as any).scheduleRefresh?.bind(tokenManager);
   if (originalScheduleRefresh) {
     (tokenManager as any).scheduleRefresh = (accessToken: string) => {
-      // 获取剩余时间
       const remainingTime = (tokenManager as any).getTokenRemainingTime?.(accessToken) || 0;
       if (remainingTime <= 0) return;
 
@@ -279,7 +265,6 @@ export const initializeAuth = async () => {
   // 检查并刷新认证状态
   await store.refreshAuth();
 
-  // 监听全局登出事件
   window.addEventListener('auth:logout', () => {
     store.logout();
   });

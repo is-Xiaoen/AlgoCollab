@@ -27,7 +27,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Profile Header */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-32"></div>
         <div className="px-6 pb-6">
@@ -54,7 +53,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
           </div>
         </div>
 
-        {/* Tabs */}
         <div className="border-t px-6">
           <div className="flex space-x-8">
             {[
@@ -78,10 +76,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
         </div>
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'profile' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* User Info */}
           <div className="bg-white rounded-xl shadow-sm border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">基本信息</h3>
             <div className="space-y-3">
@@ -104,7 +100,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
             </div>
           </div>
 
-          {/* Statistics */}
           <div className="bg-white rounded-xl shadow-sm border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">练习统计</h3>
             <div className="space-y-4">
@@ -128,7 +123,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ onLogout }) => {
             </div>
           </div>
 
-          {/* Recent Activity */}
           <div className="md:col-span-2 bg-white rounded-xl shadow-sm border p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">最近活动</h3>
             <div className="space-y-3">

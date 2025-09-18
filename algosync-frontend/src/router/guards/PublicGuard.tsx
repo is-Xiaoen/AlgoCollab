@@ -16,8 +16,6 @@ const PublicGuard: React.FC<PublicGuardProps> = ({
   redirectTo = '/home' 
 }) => {
   const { isAuthenticated } = useAuthStore();
-  
-  // 已登录用户重定向到首页
   if (isAuthenticated) {
     return <Navigate to={redirectTo} replace />;
   }

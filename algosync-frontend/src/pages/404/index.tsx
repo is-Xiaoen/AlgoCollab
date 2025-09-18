@@ -7,16 +7,12 @@ const NotFound: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="text-center">
-        {/* 404 大标题 */}
         <h1 className="text-9xl font-bold text-blue-600 animate-bounce">404</h1>
-        
-        {/* 错误信息 */}
         <h2 className="text-3xl font-semibold text-gray-800 mt-4">页面未找到</h2>
         <p className="text-gray-600 mt-2 max-w-md mx-auto">
           抱歉，您访问的页面不存在或已被移除。请检查URL是否正确。
         </p>
         
-        {/* 插图 */}
         <div className="mt-8 mb-8">
           <svg 
             className="w-64 h-64 mx-auto" 
@@ -44,7 +40,6 @@ const NotFound: React.FC = () => {
           </svg>
         </div>
         
-        {/* 操作按钮 */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <button
             onClick={() => navigate(-1)}
