@@ -31,7 +31,7 @@ func Init(cfg *config.LogConfig) error {
 	// 5. 创建 Logger（添加调用者信息和堆栈追踪）
 	Logger = zap.New(core,
 		zap.AddCaller(),                       // 添加调用位置
-		zap.AddStacktrace(zapcore.ErrorLevel), // Error级别以上添加堆栈
+		zap.AddStacktrace(zapcore.FatalLevel), // 只在Fatal级别添加堆栈
 	)
 
 	Sugar = Logger.Sugar()
