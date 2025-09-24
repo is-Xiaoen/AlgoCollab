@@ -218,7 +218,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
           autoComplete="new-password"
           showStrengthIndicator
         />
-        
         {formData.password && (
           <div className="mt-2 space-y-1">
             <p className="text-xs font-medium text-gray-700">密码要求：</p>
@@ -264,7 +263,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
                 包含特殊字符 (!@#$%^&*) [可选]
               </li>
             </ul>
-            
             {passwordStrengthErrors.length > 0 && (
               <p className="text-xs text-red-500 mt-2">
                 还需满足 {passwordStrengthErrors.length} 个要求
@@ -286,7 +284,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         autoComplete="new-password"
       />
 
-      {/* 增强版服务条款同意 */}
       <div className="space-y-2">
         <div className="flex items-start">
           <div className="relative">
@@ -352,7 +349,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         )}
       </div>
 
-      {/* 增强版注册按钮 */}
       <button
         type="submit"
         disabled={isSubmitting || !formData.agreeToTerms}
@@ -370,7 +366,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         <span className="sr-only">
           {isSubmitting ? '正在注册，请稍候' : '点击注册新账号'}
         </span>
-        
         <span 
           className={`
             absolute inset-0 bg-white opacity-0
@@ -378,7 +373,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
             transition-opacity duration-300
           `}
         />
-        
         <span className="relative flex items-center justify-center">
           {isSubmitting ? (
             <>
@@ -429,7 +423,6 @@ const RegisterForm: React.FC<RegisterFormProps> = ({
         )}
       </button>
 
-      {/* 已有账号提示 */}
       <div className="text-center text-sm text-gray-600">
         已有账号？
         <button

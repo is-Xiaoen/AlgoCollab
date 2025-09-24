@@ -26,10 +26,13 @@ const AuthPage: React.FC = () => {
     clearError();
   }, [activeTab, clearError]);
 
+  
+
   // 登录处理逻辑
   const handleLogin = async (data: LoginFormData) => {
     try {
       await login(data.email, data.password);
+      
     } catch (error: any) {
       console.error('登录失败:', error);
     }

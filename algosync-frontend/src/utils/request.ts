@@ -7,12 +7,18 @@ const request: AxiosInstance = axios.create({
   baseURL:
     import.meta.env.VITE_APP_ENV === 'localhost' ? '/api' : import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
 });
 
 const refreshTokenRequest: AxiosInstance = axios.create({
   baseURL:
     import.meta.env.VITE_APP_ENV === 'localhost' ? '/api' : import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
 });
 
 interface QueueItem {
@@ -157,6 +163,19 @@ class RequestQueueManager {
     
     return null;
   }
+
+  /**
+   * 添加请求到待处理队列
+   */
+  addPendingRequest(config: InternalAxiosRequestConfig, promise: Promise<any>): void {
+    const key = this.getPendingKey(config);
+    this.pendingRequests.set(key, promise);
+    
+    // 请求完成后移除
+    promise.finally(() => {
+      this.pendingRequests.delete(key);
+    });
+  }
 }
 
 const queueManager = new RequestQueueManager();
@@ -167,6 +186,14 @@ request.interceptors.request.use(
     // 记录请求日志
     logger.logRequest(config);
     
+    // 确保headers存在
+    if (!config.headers) {
+      config.headers = new axios.AxiosHeaders();
+    }
+
+    // 添加ngrok跳过浏览器警告的Header
+    config.headers['ngrok-skip-browser-warning'] = 'true';
+    
     // 跳过认证的请求（如刷新token）
     if (config.headers['Skip-Auth']) {
       return config;
@@ -174,9 +201,6 @@ request.interceptors.request.use(
 
     const accessToken = tokenManager.getAccessToken();
     if (accessToken) {
-      if (!config.headers) {
-        config.headers = new axios.AxiosHeaders();
-      }
       config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
 
@@ -231,10 +255,8 @@ request.interceptors.response.use(
     return data;
   },
   async (error: AxiosError) => {
-    // 记录错误日志
     logger.logError(error);
     
-    // 错误上报机制
     const errorInfo = {
       url: error.config?.url,
       method: error.config?.method,
@@ -242,66 +264,51 @@ request.interceptors.response.use(
       message: error.message,
       timestamp: new Date().toISOString(),
       userAgent: navigator.userAgent,
-      userId: 'anonymous', // 可以从 store 获取真实用户ID
+      userId: 'anonymous',  
       stack: error.stack,
     };
     
-    // 判断是否需要上报（过滤不重要的错误）
     const shouldReport = error.response?.status !== 401 && error.response?.status !== 403;
-    
     if (shouldReport) {
-      // 如果有 Sentry 等监控平台
       if (typeof window !== 'undefined' && (window as any).Sentry) {
         (window as any).Sentry.captureException(error, { extra: errorInfo });
       } else {
-        // 使用 sendBeacon 上报到自己的监控API
         if (navigator.sendBeacon) {
           navigator.sendBeacon('/api/errors', JSON.stringify(errorInfo));
         } else {
-          // 备用方案：使用 fetch
           fetch('/api/errors', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(errorInfo),
-          }).catch(() => {}); // 忽略上报失败
+          }).catch(() => {});  
         }
       }
     }
-    
     if (!error.isAxiosError || !error.response) {
       console.error('Network error:', error);
       return Promise.reject(error);
     }
-    
     const { status } = error.response;
     const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
-    
     if (status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
       if (originalRequest.url?.includes('/auth/refresh')) {
         tokenManager.clearAll();
         window.dispatchEvent(new CustomEvent('auth:logout'));
         return Promise.reject(error);
       }
-      
       return queueManager.refreshAndRetry(originalRequest);
     }
-    
     if (status === 403) {
       window.dispatchEvent(new CustomEvent('auth:forbidden', { 
         detail: { message: '您没有权限访问此资源' } 
       }));
     }
-    
     return Promise.reject(error);
   },
 );
 
-/**
- * 处理Blob响应（文件下载）
- * 支持错误处理、类型检测和进度回调
- */
+//处理Blob响应（文件下载）
 function handleBlobResponse(response: AxiosResponse): Promise<any> {
   const { data } = response;
   const contentType = response.headers['content-type'] || '';
@@ -314,7 +321,7 @@ function handleBlobResponse(response: AxiosResponse): Promise<any> {
   
   // 检查文件大小
   const contentLength = response.headers['content-length'];
-  const maxSize = 100 * 1024 * 1024; // 100MB
+  const maxSize = 100 * 1024 * 1024;  
   if (contentLength && parseInt(contentLength) > maxSize) {
     return Promise.reject(new Error('文件过大，超过100MB限制'));
   }
@@ -362,24 +369,16 @@ function createError(
   return error;
 }
 
-/**
- * 请求/响应日志记录器
- * 仅在开发环境启用，帮助调试API问题
- */
+//请求/响应日志记录器
 class RequestLogger {
-  private enabled = import.meta.env.DEV; // 仅开发环境启用
-  private sensitiveFields = ['password', 'token', 'authorization', 'secret', 'key']; // 敏感字段列表
+  private enabled = import.meta.env.DEV;  
+  private sensitiveFields = ['password', 'token', 'authorization', 'secret', 'key']; 
   
-  /**
-   * 脱敏处理敏感数据
-   * @param data - 需要脱敏的数据
-   * @returns 脱敏后的数据
-   */
+  //脱敏处理敏感数据
   private sanitize(data: any): any {
     if (!data) return data;
     
     if (typeof data === 'string') {
-      // 检查字符串是否包含敏感关键词
       const lowerData = data.toLowerCase();
       if (this.sensitiveFields.some(field => lowerData.includes(field))) {
         return '***REDACTED***';
@@ -406,10 +405,7 @@ class RequestLogger {
     return data;
   }
   
-  /**
-   * 记录请求日志
-   * @param config - 请求配置
-   */
+  //记录请求日志
   logRequest(config: InternalAxiosRequestConfig): void {
     if (!this.enabled) return;
     
@@ -421,11 +417,7 @@ class RequestLogger {
     console.groupEnd();
   }
   
-  /**
-   * 记录响应日志
-   * @param response - 响应对象
-   * @param duration - 请求耗时（毫秒）
-   */
+  //记录响应日志
   logResponse(response: AxiosResponse, duration?: number): void {
     if (!this.enabled) return;
     
@@ -438,10 +430,7 @@ class RequestLogger {
     console.groupEnd();
   }
   
-  /**
-   * 记录错误日志
-   * @param error - 错误对象
-   */
+  //记录错误日志
   logError(error: AxiosError): void {
     if (!this.enabled) return;
     

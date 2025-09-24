@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 
@@ -25,18 +25,8 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   const { 
     isAuthenticated, 
     user, 
-    refreshAuth, 
     isLoading,
-    checkAuth 
   } = useAuthStore();
-
-  useEffect(() => {
-    // 初次加载时尝试刷新认证状态
-    if (!isAuthenticated && !isLoading) {
-      checkAuth();
-    }
-  }, [isAuthenticated, isLoading, checkAuth]);
-
   // TODO(human): 实现加载状态的优雅展示
   // 提示：创建一个专门的LoadingSpinner组件
   // 要求：
@@ -66,17 +56,17 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     }
   }
 
-  // 权限检查
-  if (requiredPermissions.length > 0 && user) {
-    const userPermissions = user.permissions || [];
-    const hasAllPermissions = requiredPermissions.every(permission =>
-      userPermissions.includes(permission)
-    );
+  // // 权限检查
+  // if (requiredPermissions.length > 0 && user) {
+  //   const userPermissions = user.permissions || [];
+  //   const hasAllPermissions = requiredPermissions.every(permission =>
+  //     userPermissions.includes(permission)
+  //   );
     
-    if (!hasAllPermissions) {
-      return <Navigate to="/403" replace />;
-    }
-  }
+  //   if (!hasAllPermissions) {
+  //     return <Navigate to="/403" replace />;
+  //   }
+  // }
 
   // TODO(human): 实现路由切换动画
   // 提示：使用React Transition Group或Framer Motion

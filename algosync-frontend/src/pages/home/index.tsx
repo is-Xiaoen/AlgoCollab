@@ -70,13 +70,11 @@ const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Welcome Section */}
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-2">欢迎回来！</h2>
         <p className="text-gray-600">今天是提升算法能力的好日子，让我们开始吧！</p>
       </div>
 
-      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <div key={index} className="bg-white rounded-xl shadow-sm border overflow-hidden hover:shadow-md transition-shadow">
@@ -99,9 +97,7 @@ const HomePage: React.FC = () => {
         ))}
       </div>
 
-      {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recent Activity */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">最近活动</h3>
           <div className="space-y-3">
@@ -122,7 +118,6 @@ const HomePage: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Start */}
         <div className="bg-white rounded-xl shadow-sm border p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">快速开始</h3>
           <div className="space-y-3">

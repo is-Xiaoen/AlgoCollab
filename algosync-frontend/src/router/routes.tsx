@@ -6,6 +6,7 @@ import { Navigate } from 'react-router-dom';
 // 懒加载组件
 const AuthPage = lazy(() => import('../pages/auth'));
 const Home = lazy(() => import('../pages/layout'));
+const EditorPage = lazy(() => import('../pages/editor'));
 const NotFound = lazy(() => import('../pages/404'));
 
 // Loading 组件
@@ -70,6 +71,16 @@ export const routes: RouteObject[] = [
       <AuthGuard>
         <Suspense fallback={<PageLoader />}>
           {/* <Settings /> */}
+        </Suspense>
+      </AuthGuard>
+    ),
+  },
+  {
+    path: '/editor/:problemId',
+    element: (
+      <AuthGuard>
+        <Suspense fallback={<PageLoader />}>
+          <EditorPage />
         </Suspense>
       </AuthGuard>
     ),

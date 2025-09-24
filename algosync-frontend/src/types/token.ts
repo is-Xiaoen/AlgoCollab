@@ -1,7 +1,3 @@
-/**
- * 统一的Token相关类型定义
- */
-
 // 标准化的Token对
 export interface TokenPair {
   accessToken: string;
@@ -24,14 +20,14 @@ export interface TokenEvent {
 
 // JWT Payload 基本结构
 export interface JWTPayload {
-  sub: string;  // 用户ID
+  sub: string;   
   email?: string;
   username?: string;
   roles?: string[];
-  iat?: number;  // 签发时间
-  exp?: number;  // 过期时间
-  iss?: string;  // 签发者
-  aud?: string;  // 受众
+  iat?: number;  
+  exp?: number;   
+  iss?: string;  
+  aud?: string;  
 }
 
 // Token存储键名
@@ -42,8 +38,8 @@ export const TOKEN_KEYS = {
 
 // Token相关常量
 export const TOKEN_CONFIG = {
-  BUFFER_TIME: 5 * 60 * 1000,      // 5分钟缓冲时间
-  REFRESH_THRESHOLD: 15 * 60 * 1000, // 15分钟刷新阈值
-  REFRESH_RATIO: 0.8,               // 在过期前80%时刷新
-  MIN_REFRESH_TIME: 10 * 60 * 1000, // 最少提前10分钟刷新
+  BUFFER_TIME: 5 * 60 * 1000,      
+  REFRESH_THRESHOLD: 15 * 60 * 1000,  
+  REFRESH_RATIO: 0.8,                
+  MIN_REFRESH_TIME: 10 * 60 * 1000, 
 } as const;

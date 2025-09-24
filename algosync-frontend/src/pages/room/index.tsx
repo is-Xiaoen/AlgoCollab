@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Breadcrumb from '../../components/common/Breadcrumb';
 
 interface Room {
   id: string;
@@ -68,9 +69,15 @@ const RoomPage: React.FC = () => {
     }
   };
 
+  const breadcrumbItems = [
+    { label: '首页', href: '/home' },
+    { label: '协作房间', active: true }
+  ];
+
   return (
     <div className="space-y-6">
-      {/* Header */}
+      <Breadcrumb items={breadcrumbItems} className="mb-4" />
+      
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
@@ -88,7 +95,6 @@ const RoomPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Filter Tabs */}
         <div className="mt-6 flex space-x-4">
           {[
             { key: 'all', label: '全部房间' },
@@ -110,7 +116,6 @@ const RoomPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl p-4 text-white">
           <p className="text-blue-100 text-sm">在线房间</p>
@@ -130,7 +135,6 @@ const RoomPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Rooms Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {rooms.map((room) => (
           <div key={room.id} className="bg-white rounded-xl shadow-sm border hover:shadow-md transition-shadow">
@@ -183,7 +187,6 @@ const RoomPage: React.FC = () => {
         ))}
       </div>
 
-      {/* TODO(human): 实现创建房间的模态框 */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-xl p-6 max-w-md w-full">

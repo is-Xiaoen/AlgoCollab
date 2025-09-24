@@ -214,81 +214,61 @@ class TokenManager {
     }
   }
 
-  /**
-   * 通知所有等待刷新的订阅者
-   */
+  //通知所有等待刷新的订阅者
   private onAccessTokenFetched(token: string) {
     this.refreshSubscribers.forEach(callback => callback(token));
     this.refreshSubscribers = [];
   }
 
-  /**
-   * 处理刷新失败
-   */
   private handleRefreshFailure() {
     this.clearAll();
     // 触发全局登出事件
     window.dispatchEvent(new CustomEvent('auth:logout'));
   }
 
-  /**
-   * 清除所有token和定时器
-   */
+ 
   clearAll() {
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
       this.refreshTimer = null;
     }
-    
-    // 清除存储
+   
     accessTokenInMemory = null;
     localStorage.removeItem(TOKEN_KEYS.REFRESH_TOKEN);
     localStorage.removeItem(TOKEN_KEYS.TOKEN_TIMESTAMP);
-    
     // 触发token清除事件
     window.dispatchEvent(new CustomEvent('token-updated', { 
       detail: { hasToken: false } 
     }));
-    
     this.isRefreshing = false;
     this.refreshPromise = null;
     this.refreshSubscribers = [];
   }
 
-  /**
-   * 登出处理
-   */
+  //登出处理
   private onLogout() {
     this.clearAll();
   }
 
-  /**
-   * 检查是否已认证
-   */
+  //检查是否已认证
   isAuthenticated(): boolean {
     const accessToken = this.getAccessToken();
     const refreshToken = this.getRefreshToken();
     
-    if (!accessToken || !refreshToken) {
-      return false;
-    }
-    
-    if (!isTokenExpired(accessToken)) {
+    // 如果有有效的access token，直接返回true
+    if (accessToken && !isTokenExpired(accessToken)) {
       return true;
     }
     
+    // 如果没有access token但有refresh token，可能是页面刷新导致的
+    // 此时应该尝试用refresh token重新获取access token
     return !!refreshToken;
   }
-
-  /**
-   * 从Token中解析用户信息
-   */
+  //从Token中解析用户信息
   getUserFromToken(): any {
     const token = this.getAccessToken();
     if (!token) return null;
-    
     const payload = parseJWT(token);
-    
     return payload ? {
       id: payload.sub,
       email: payload.email,
@@ -296,33 +276,25 @@ class TokenManager {
       roles: payload.roles || []
     } : null;
   }
-
-  /**
-   * 初始化token监听器
-   */
+  //初始化token监听器
   initTokenListener(callback: (hasToken: boolean) => void): (() => void) {
     const handleTokenUpdate = (event: Event) => {
       const customEvent = event as CustomEvent;
       callback(customEvent.detail.hasToken);
     };
-    
     window.addEventListener('token-updated', handleTokenUpdate);
-    
     // 返回清理函数
     return () => {
       window.removeEventListener('token-updated', handleTokenUpdate);
     };
   }
 
-  /**
-   * 检查token是否即将过期（用于主动刷新）
-   */
+  //检查token是否即将过期（用于主动刷新）
   isTokenExpiring(): boolean {
     const token = this.getAccessToken();
     if (!token) return false;
-    
     const remainingTime = getTokenRemainingTime(token);
-    return remainingTime <= 15 * 60 * 1000; // 15分钟内过期
+    return remainingTime <= 15 * 60 * 1000;  
   }
 }
 
