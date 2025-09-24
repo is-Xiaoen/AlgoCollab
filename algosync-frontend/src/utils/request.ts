@@ -7,12 +7,18 @@ const request: AxiosInstance = axios.create({
   baseURL:
     import.meta.env.VITE_APP_ENV === 'localhost' ? '/api' : import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
 });
 
 const refreshTokenRequest: AxiosInstance = axios.create({
   baseURL:
     import.meta.env.VITE_APP_ENV === 'localhost' ? '/api' : import.meta.env.VITE_API_BASE_URL,
   timeout: 10000,
+  headers: {
+    'ngrok-skip-browser-warning': 'true',
+  },
 });
 
 interface QueueItem {
@@ -157,6 +163,19 @@ class RequestQueueManager {
     
     return null;
   }
+
+  /**
+   * 添加请求到待处理队列
+   */
+  addPendingRequest(config: InternalAxiosRequestConfig, promise: Promise<any>): void {
+    const key = this.getPendingKey(config);
+    this.pendingRequests.set(key, promise);
+    
+    // 请求完成后移除
+    promise.finally(() => {
+      this.pendingRequests.delete(key);
+    });
+  }
 }
 
 const queueManager = new RequestQueueManager();
@@ -167,6 +186,14 @@ request.interceptors.request.use(
     // 记录请求日志
     logger.logRequest(config);
     
+    // 确保headers存在
+    if (!config.headers) {
+      config.headers = new axios.AxiosHeaders();
+    }
+
+    // 添加ngrok跳过浏览器警告的Header
+    config.headers['ngrok-skip-browser-warning'] = 'true';
+    
     // 跳过认证的请求（如刷新token）
     if (config.headers['Skip-Auth']) {
       return config;
@@ -174,9 +201,6 @@ request.interceptors.request.use(
 
     const accessToken = tokenManager.getAccessToken();
     if (accessToken) {
-      if (!config.headers) {
-        config.headers = new axios.AxiosHeaders();
-      }
       config.headers['Authorization'] = `Bearer ${accessToken}`;
     }
 

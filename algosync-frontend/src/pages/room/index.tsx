@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Breadcrumb from '../../components/common/Breadcrumb';
 
 interface Room {
   id: string;
@@ -68,8 +69,15 @@ const RoomPage: React.FC = () => {
     }
   };
 
+  const breadcrumbItems = [
+    { label: '首页', href: '/home' },
+    { label: '协作房间', active: true }
+  ];
+
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} className="mb-4" />
+      
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>

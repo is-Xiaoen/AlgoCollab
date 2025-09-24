@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Breadcrumb from '../../components/common/Breadcrumb';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-type Category = 'all' | 'array' | 'string' | 'tree' | 'dp' | 'graph';
+// type Category = 'all' | 'array' | 'string' | 'tree' | 'dp' | 'graph';
 
 interface Problem {
   id: number;
@@ -14,8 +16,8 @@ interface Problem {
 }
 
 const AlgorithmPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'all'>('all');
-  const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const problems: Problem[] = [
@@ -74,14 +76,26 @@ const AlgorithmPage: React.FC = () => {
     }
   };
 
-  const filterProblems = (problems: Problem[]) => {
-    // 用户需要实现根据难度、分类和搜索关键词筛选题目的逻辑
-    
-    return problems;
+  // const filterProblems = (problems: Problem[]) => {
+  //   // 用户需要实现根据难度、分类和搜索关键词筛选题目的逻辑
+  //   
+  //   return problems;
+  // };
+
+  const handleStartPractice = (problemId: number) => {
+    // 跳转到编辑器页面
+    navigate(`/editor/${problemId}`);
   };
+
+  const breadcrumbItems = [
+    { label: '首页', href: '/home' },
+    { label: '算法题库', active: true }
+  ];
 
   return (
     <div className="space-y-6">
+      <Breadcrumb items={breadcrumbItems} className="mb-4" />
+      
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -213,7 +227,10 @@ const AlgorithmPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4">
-                      <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                      <button 
+                        onClick={() => handleStartPractice(problem.id)}
+                        className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
+                      >
                         开始练习
                       </button>
                     </td>

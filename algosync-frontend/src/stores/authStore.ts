@@ -16,6 +16,7 @@ interface AuthState {
   error: string | null;
   loginAttempts: number;
   lastActivity: number;
+  isRefreshing: boolean; // 添加刷新状态标记
 
   login: (email: string, password: string) => Promise<void>;
   register: (username: string, email: string, password: string) => Promise<void>;
@@ -40,6 +41,7 @@ const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
 const MAX_LOGIN_ATTEMPTS = 5;
 
 let inactivityTimer: NodeJS.Timeout | null = null;
+let refreshAuthPromise: Promise<void> | null = null;
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -50,6 +52,7 @@ export const useAuthStore = create<AuthState>()(
       error: null,
       loginAttempts: 0,
       lastActivity: Date.now(),
+      isRefreshing: false,
 
       // 登录
       login: async (email: string, password: string) => {
@@ -133,46 +136,76 @@ export const useAuthStore = create<AuthState>()(
           }
         });
       },
-
       setLoading: (loading) => {
         set((state) => {
           state.isLoading = loading;
         });
       },
-
       setError: (error) => {
         set((state) => {
           state.error = error;
         });
       },
-
       clearError: () => {
         set((state) => {
           state.error = null;
         });
       },
-
       // 重新获取用户信息
       refreshAuth: async () => {
-        const isAuthenticated = tokenManager.isAuthenticated();
-        if (!isAuthenticated) {
+        if (refreshAuthPromise) {
+          await refreshAuthPromise;
+          return;
+        }
+        const hasRefreshToken = !!tokenManager.getRefreshToken();
+        const hasAccessToken = !!tokenManager.getAccessToken();
+        
+        if (!hasRefreshToken) {
+          // 没有refreshToken，用户未登录
           set((state) => {
             state.isAuthenticated = false;
             state.user = null;
+            state.isRefreshing = false;
           });
           return;
         }
-        try {
-          const user = await authService.getCurrentUser();
-          set((state) => {
-            state.user = user;
-            state.isAuthenticated = true;
-            state.lastActivity = Date.now();
-          });
-        } catch (error) {
-          console.error('Failed to refresh auth:', error);
-          get().logout();
-        }
+        
+        set((state) => {
+          state.isLoading = true;
+          state.isRefreshing = true;
+        });
+        
+        // 创建刷新Promise
+        refreshAuthPromise = (async () => {
+          try {
+            // 如果没有accessToken但有refreshToken，先刷新token
+            if (!hasAccessToken && hasRefreshToken) {
+              const refreshToken = tokenManager.getRefreshToken()!;
+              const tokens = await authService.refreshToken(refreshToken);
+              tokenManager.setTokenPair(tokens.accessToken, tokens.refreshToken);
+            }
+            
+            const user = await authService.getCurrentUser();
+            set((state) => {
+              state.user = user;
+              state.isAuthenticated = true;
+              state.lastActivity = Date.now();
+              state.isLoading = false;
+              state.isRefreshing = false;
+            });
+            get().setupInactivityTimer();
+          } catch (error) {
+            set((state) => {
+              state.isLoading = false;
+              state.isRefreshing = false;
+            });
+            get().logout();
+          } finally {
+            // 清除Promise引用
+            refreshAuthPromise = null;
+          }
+        })();
+        await refreshAuthPromise;
       },
 
       // 更新最后活动时间
@@ -182,16 +215,13 @@ export const useAuthStore = create<AuthState>()(
         });
         get().resetInactivityTimer();
       },
-
       setupInactivityTimer: () => {
         if (inactivityTimer) {
           clearTimeout(inactivityTimer);
           inactivityTimer = null;
         }
-
         const { isAuthenticated } = get();
         if (!isAuthenticated) return;
-
         inactivityTimer = setTimeout(() => {
           get().handleInactiveLogout();
         }, INACTIVITY_TIMEOUT);
@@ -221,9 +251,9 @@ export const useAuthStore = create<AuthState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          // TODO(human): 实现自动刷新认证
-          // 提示：如果有token，尝试刷新用户信息
-          // state.refreshAuth();
+          // 恢复状态后重置刷新标记
+          state.isRefreshing = false;
+          console.log('Auth state rehydrated from storage');
         }
       },
     }
@@ -233,6 +263,10 @@ export const useAuthStore = create<AuthState>()(
 // 初始化认证系统
 export const initializeAuth = async () => {
   const store = useAuthStore.getState();
+  
+  // 等待状态恢复完成
+  await new Promise(resolve => setTimeout(resolve, 50));
+  
   const refreshApiFunction = async (refreshToken: string) => {
     try {
       return await authService.refreshToken(refreshToken);
@@ -262,8 +296,12 @@ export const initializeAuth = async () => {
     };
   }
 
-  // 检查并刷新认证状态
-  await store.refreshAuth();
+  // 只有在有认证状态时才刷新
+  const currentState = useAuthStore.getState();
+  if (currentState.isAuthenticated || tokenManager.isAuthenticated()) {
+    await store.refreshAuth();
+  } else {
+  }
 
   window.addEventListener('auth:logout', () => {
     store.logout();

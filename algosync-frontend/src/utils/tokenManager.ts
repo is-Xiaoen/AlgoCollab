@@ -254,13 +254,14 @@ class TokenManager {
   isAuthenticated(): boolean {
     const accessToken = this.getAccessToken();
     const refreshToken = this.getRefreshToken();
-    if (!accessToken || !refreshToken) {
-      return false;
-    }
-    if (!isTokenExpired(accessToken)) {
+    
+    // 如果有有效的access token，直接返回true
+    if (accessToken && !isTokenExpired(accessToken)) {
       return true;
     }
     
+    // 如果没有access token但有refresh token，可能是页面刷新导致的
+    // 此时应该尝试用refresh token重新获取access token
     return !!refreshToken;
   }
   //从Token中解析用户信息

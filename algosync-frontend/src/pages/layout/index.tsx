@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuthStore } from '../../stores/authStore';
 import HomePage from '../home/index';
 import AlgorithmPage from '../algorithm/index';
@@ -17,8 +17,20 @@ interface TabItem {
 
 const MainLayout: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user, logout } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<TabType>('home');
+  
+  // 从 URL 参数获取初始 tab，如果没有则默认为 'home'
+  const initialTab = (searchParams.get('tab') as TabType) || 'home';
+  const [activeTab, setActiveTab] = useState<TabType>(initialTab);
+  
+  // 当 URL 参数变化时更新 activeTab
+  useEffect(() => {
+    const tabParam = searchParams.get('tab') as TabType;
+    if (tabParam && ['home', 'algorithm', 'room', 'profile'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
   
   const handleLogout = () => {
     logout();
