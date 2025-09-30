@@ -159,12 +159,16 @@ const EditorPage: React.FC = () => {
         </div>
         <div className={`${isCollaborative ? 'w-1/2' : 'w-2/3'} flex flex-col`}>
           <EditorToolbar
+          theme = {theme}
+          fontSize={fontSize}
+          language={language}
             onFormat={()=>{
               console.log('format');
             }}
             onThemeChange={(newTheme)=>setTheme(newTheme)}
             onFontSizeChange={(newSize)=>setFontSize(newSize)}
             onLanguageChange={(newLanguage)=>{
+              setLanguage(newLanguage);
               const templates = {
                 javascript: `function twoSum(nums, target) {\n    // TODO:
   实现你的解决方案\n    \n}`,

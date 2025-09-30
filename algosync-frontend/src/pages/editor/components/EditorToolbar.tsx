@@ -10,6 +10,9 @@ import{
 export type Language = 'cpp' | 'java' | 'javascript' | 'python';
 
 interface EditorToolbarProps {
+  theme: 'vs-dark' |'vs-light';
+  fontSize : number;
+  language: Language;
   onFormat:()=>void;
   onThemeChange:(theme:'vs-dark'|'vs-light') => void;
   onFontSizeChange:(size:number) => void;
@@ -17,36 +20,28 @@ interface EditorToolbarProps {
 }
 
 export const EditorToolbar: React.FC<EditorToolbarProps> = ({
+  theme,
+  fontSize,
+  language,
   onFormat,
   onThemeChange,
   onFontSizeChange,
   onLanguageChange
 })=>{
-  const [theme,setTheme] = useState<'vs-dark'|'vs-light'>('vs-dark');
-  const [fontSize,setFontSize] = useState(14);
-  const [language,setLanguage] = useState<Language>('javascript');
-
-  //切换主题
    const handleThemeToggle = () => {
     const newTheme = theme ==='vs-dark'? 'vs-light':'vs-dark';
-    setTheme(newTheme);
     onThemeChange(newTheme);
    }
 
-   //切换字体大小
    const handleFontSizeChange = (delta: number) => {
     const newSize = Math.max(10,Math.min(24,fontSize+delta));
-    setFontSize(newSize);
     onFontSizeChange(newSize);
    }
 
-   //切换语言
    const handleLanguageChange = (newLanguage: Language) => {
-    setLanguage(newLanguage);
     onLanguageChange(newLanguage);
    }
 
-   // 语言显示名称映射
    const languageNames: Record<Language, string> = {
     cpp: 'C++',
     java: 'Java',
@@ -57,7 +52,6 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
    return (
     <div className="editor-toolbar flex items-center justify-between px-4 py-2 bg-gray-800 border-b border-gray-700">
       <div className="flex items-center space-x-2">
-        {/* 语言选择器 */}
         <select
           value={language}
           onChange={(e) => handleLanguageChange(e.target.value as Language)}
