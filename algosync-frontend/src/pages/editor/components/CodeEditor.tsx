@@ -1,6 +1,5 @@
 import React from 'react';
-
-type Language = 'javascript' | 'python' | 'java' | 'cpp';
+import type { Language } from './EditorToolbar';
 
 interface CodeEditorProps {
   code: string;
@@ -17,44 +16,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
   output,
   isRunning
 }) => {
-
-  // const getLanguageTemplate = (lang: string) => {
-  //   switch (lang) {
-  //     case 'javascript':
-  //       return `function twoSum(nums, target) {
-  //   // TODO: 实现你的解决方案
-  //   
-  // }`;
-  //     case 'python':
-  //       return `def twoSum(nums, target):
-  //   # TODO: 实现你的解决方案
-  //   pass`;
-  //     case 'java':
-  //       return `class Solution {
-  //   public int[] twoSum(int[] nums, int target) {
-  //       // TODO: 实现你的解决方案
-  //       
-  //   }
-  // }`;
-  //     case 'cpp':
-  //       return `class Solution {
-  // public:
-  //   vector<int> twoSum(vector<int>& nums, int target) {
-  //       // TODO: 实现你的解决方案
-  //       
-  //   }
-  // };`;
-  //     default:
-  //       return code;
-  //   }
-  // };
-
-  // const handleLanguageSwitch = (newLanguage: string) => {
-  //   if (newLanguage !== language) {
-  //     onChange(getLanguageTemplate(newLanguage));
-  //   }
-  // };
-
   // TODO(human): 这里需要实现代码高亮和自动补全功能
   // 可以考虑集成 Monaco Editor 或 CodeMirror
   
@@ -99,7 +60,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
           }}
         />
         
-        {/* 行号显示 */}
         <div className="absolute left-0 top-0 h-full w-12 bg-gray-100 border-r border-gray-200 flex flex-col text-xs text-gray-500 font-mono pt-4">
           {code.split('\n').map((_, index) => (
             <div key={index} className="px-2 leading-6 text-right">
@@ -109,7 +69,6 @@ const CodeEditor: React.FC<CodeEditorProps> = ({
         </div>
       </div>
 
-      {/* 运行结果区域 */}
       <div className="h-48 border-t bg-gray-900 flex flex-col">
         <div className="px-4 py-2 bg-gray-800 border-b border-gray-700 flex items-center justify-between">
           <div className="flex items-center space-x-2">

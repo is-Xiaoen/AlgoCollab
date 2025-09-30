@@ -5,6 +5,7 @@ import CodeEditor from './components/CodeEditor';
 import ChatPanel from './components/ChatPanel';
 import BackButton from '../../components/common/BackButton';
 import Breadcrumb from '../../components/common/Breadcrumb';
+import { EditorToolbar } from './components/EditorToolbar';
 
 type Language = 'javascript' | 'python' | 'java' | 'cpp';
 
@@ -31,6 +32,8 @@ const EditorPage: React.FC = () => {
   
   const [problem, setProblem] = useState<Problem | null>(null);
   const [code, setCode] = useState<string>('');
+  const [theme, setTheme ] = useState<'vs-dark'|'vs-light'>('vs-dark');
+  const [fontSize,setFontSize] = useState(14);
   const [language, setLanguage] = useState<Language>('javascript');
   const [isRunning, setIsRunning] = useState(false);
   const [output, setOutput] = useState<string>('');
@@ -43,9 +46,7 @@ const EditorPage: React.FC = () => {
       title: '两数之和',
       difficulty: 'easy',
       description: `给定一个整数数组 nums 和一个整数目标值 target，请你在该数组中找出 和为目标值 target 的那 两个 整数，并返回它们的数组下标。
-
 你可以假设每种输入只会对应一个答案。但是，数组中同一个元素在答案里不能重复出现。
-
 你可以按任意顺序返回答案。`,
       examples: [
         {
@@ -66,12 +67,10 @@ const EditorPage: React.FC = () => {
       ]
     };
     setProblem(mockProblem);
-    
     // 设置初始代码模板
     setCode(`function twoSum(nums, target) {
     // TODO: 实现你的解决方案
 }`);
-
   }, [problemId]);
 
   const handleRunCode = async () => {
@@ -136,18 +135,7 @@ const EditorPage: React.FC = () => {
         </div>
         
         <div className="flex items-center space-x-2">
-          <select
-            title='language'
-            value={language}
-            onChange={(e) => setLanguage(e.target.value as Language)}
-            className="px-3 py-1 border rounded-md text-sm"
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-          </select>
-          
+        
           <button
             onClick={handleRunCode}
             disabled={isRunning}
@@ -169,8 +157,30 @@ const EditorPage: React.FC = () => {
         <div className="w-1/3 border-r bg-white">
           <ProblemPanel problem={problem} />
         </div>
-
         <div className={`${isCollaborative ? 'w-1/2' : 'w-2/3'} flex flex-col`}>
+          <EditorToolbar
+            onFormat={()=>{
+              console.log('format');
+            }}
+            onThemeChange={(newTheme)=>setTheme(newTheme)}
+            onFontSizeChange={(newSize)=>setFontSize(newSize)}
+            onLanguageChange={(newLanguage)=>{
+              const templates = {
+                javascript: `function twoSum(nums, target) {\n    // TODO:
+  实现你的解决方案\n    \n}`,
+          python: `def twoSum(nums, target):\n    # TODO:
+  实现你的解决方案\n    pass`,
+          java: `class Solution {\n    public int[] twoSum(int[] nums, int     
+  target) {\n        // TODO: 实现你的解决方案\n        \n    }\n}`,
+          cpp: `class Solution {\npublic:\n    vector<int>
+  twoSum(vector<int>& nums, int target) {\n        // TODO:
+  实现你的解决方案\n        \n    }\n};`
+              }
+              setCode(templates[newLanguage])
+            }}
+          >
+
+          </EditorToolbar>
           <CodeEditor
             code={code}
             onChange={setCode}
@@ -179,8 +189,6 @@ const EditorPage: React.FC = () => {
             isRunning={isRunning}
           />
         </div>
-
-        {/* 右侧: 聊天面板 (仅协作模式显示) */}
         {isCollaborative && (
           <div className="w-1/3 border-l bg-white">
             <ChatPanel roomId={roomId!} />

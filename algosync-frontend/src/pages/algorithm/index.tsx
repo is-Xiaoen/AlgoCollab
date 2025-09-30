@@ -77,13 +77,11 @@ const AlgorithmPage: React.FC = () => {
   };
 
   // const filterProblems = (problems: Problem[]) => {
-  //   // 用户需要实现根据难度、分类和搜索关键词筛选题目的逻辑
-  //   
+  //   // 用户需要实现根据难度、分类和搜索关键词筛选题目的逻辑 
   //   return problems;
   // };
 
   const handleStartPractice = (problemId: number) => {
-    // 跳转到编辑器页面
     navigate(`/editor/${problemId}`);
   };
 

@@ -712,25 +712,20 @@ export class CollaborationManager {
     document.head.appendChild(style);
   }
 
-  // 设置事件监听
   private setupEventListeners(): void {
-    // 连接状态变化
     this.provider.on('status', (event: any) => {
       console.log('Connection status:', event.status);
     });
 
-    // 同步状态变化
     this.provider.on('sync', (isSynced: boolean) => {
       console.log('Sync status:', isSynced);
     });
 
-    // 文档更新
     this.ydoc.on('update', (update: Uint8Array, origin: any) => {
       console.log('Document updated');
     });
   }
 
-  // 获取当前在线用户
   getOnlineUsers(): any[] {
     const states = Array.from(this.awareness.getStates().entries());
     return states
@@ -739,7 +734,6 @@ export class CollaborationManager {
       .filter(Boolean);
   }
 
-  // 发送聊天消息
   sendMessage(message: string): void {
     const yMessages = this.ydoc.getArray('messages');
     yMessages.push([{
@@ -750,26 +744,21 @@ export class CollaborationManager {
     }]);
   }
 
-  // 监听聊天消息
   onMessage(callback: (messages: any[]) => void): void {
     const yMessages = this.ydoc.getArray('messages');
     
-    // 初始消息
     callback(yMessages.toArray());
     
-    // 监听变化
     yMessages.observe(() => {
       callback(yMessages.toArray());
     });
   }
 
-  // 获取文档内容
   getContent(): string {
     const ytext = this.ydoc.getText('monaco');
     return ytext.toString();
   }
 
-  // 设置文档内容
   setContent(content: string): void {
     const ytext = this.ydoc.getText('monaco');
     this.ydoc.transact(() => {
