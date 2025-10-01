@@ -1,4 +1,5 @@
-import React from 'react';
+import React ,{useRef,useEffect,useState} from 'react';
+import * as monaco from 'monaco-editor';
 import type { Language } from './EditorToolbar';
 
 interface CodeEditorProps {
