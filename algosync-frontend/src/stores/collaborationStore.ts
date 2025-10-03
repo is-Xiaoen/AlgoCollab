@@ -17,66 +17,77 @@ interface CollaborationUser{
   }
 }
 
+interface ChatMessage {
+  id: string;
+  userId: string;
+  content: string;
+  timestamp: number;
+}
+
 interface CollaborationState{
   manager: CollaborationManager|null;
   isConnected: boolean;
   isSynced:boolean;
   onlineUsers:CollaborationUser[];
-  // messages:ChatMessage[];
+  messages:ChatMessage[];
   initCollaboration:(option:any)=>void;
   sendMessage:(message:string)=>void;
-  updateCursor:(position:any)=>void;
-  updateSelection:(selection:any)=>void;
+  // updateCursor:(position:any)=>void;
+  // updateSelection:(selection:any)=>void;
   destroy:()=>void;
 }
 
-export const useCollaborationStore = create<CollaborationState>((set, get) => ({
+export const useCollaborationStore = create<CollaborationState>((set,get)=>({
   manager: null,
-  isConnected: false,
-  isSynced: false,
-  onlineUsers: [],
-  messages: [],
+  isConnected:false,
+  isSynced:false,
+  onlineUsers:[],
+  messages:[],
 
-  initCollaboration: (options) => {
+  initCollaboration:(options)=>{
     const manager = new CollaborationManager(options);
-    
-    // 监听在线用户
+
     setInterval(() => {
       const users = manager.getOnlineUsers();
-      set({ onlineUsers: users });
-    }, 1000);
-    
-    // 监听消息
-    manager.onMessage((messages) => {
-      // set({ messages });
-    });
-    
-    set({ manager, isConnected: true });
+      set({onlineUsers:users})
+    }, (1000));
+
+    manager.onMessage((messages)=>{
+      set({messages});
+    })
+
+    set({manager,isConnected:true});
   },
 
-  sendMessage: (message) => {
-    const { manager } = get();
+  sendMessage:(message)=>{
+    const {manager} = get();
     manager?.sendMessage(message);
   },
 
-  updateCursor: (position) => {
-    const { manager } = get();
-    // 更新光标位置
-  },
+  // updateCursor:(position)=>{
+  //   const {manager} = get();
+  //   // TODO: 实现光标位置更新逻辑
+  //   if(manager && position) {
+  //     // manager.updateCursor(position);
+  //   }
+  // },
 
-  updateSelection: (selection) => {
-    const { manager } = get();
-    // 更新选区
-  },
+  // updateSelection:(selection)=>{
+  //   const {manager} = get();
+  //   // TODO: 实现选区更新逻辑
+  //   if(manager && selection) {
+  //     // manager.updateSelection(selection);
+  //   }
+  // },
 
-  destroy: () => {
-    const { manager } = get();
+  destroy:()=>{
+    const {manager} = get();
     manager?.destroy();
-    set({ 
-      manager: null, 
-      isConnected: false,
-      onlineUsers: [],
-      // messages: [],
-    });
-  },
-}));
+    set({
+      manager:null,
+      isConnected:false,
+      onlineUsers:[],
+      messages:[]
+    })
+  }
+}))
