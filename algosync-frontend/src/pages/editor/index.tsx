@@ -8,6 +8,7 @@ import Breadcrumb from '../../components/common/Breadcrumb';
 import { useEditorStore } from '../../stores/editorStore';
 import { useCollaborationStore } from '../../stores/collaborationStore';
 import type { Language } from './components/EditorToolbar';
+//  import { CodeExecutionAPI } from '../../services/api/codeExecutionApi';
 
 interface Problem {
   id: number;
@@ -24,31 +25,15 @@ interface Problem {
 
 //代码模板
 const CODE_TEMPLATES: Record<Language, string> = {
-  javascript: `function twoSum(nums, target) {
-      // TODO: 实现你的解决方案
-
-  }`,
-  python: `def twoSum(nums, target):
-      # TODO: 实现你的解决方案
-      pass`,
-  java: `class Solution {
-      public int[] twoSum(int[] nums, int target) {
-          // TODO: 实现你的解决方案
-
-      }
-  }`,
-  cpp: `class Solution {
-  public:
-      vector<int> twoSum(vector<int>& nums, int target) {
-          // TODO: 实现你的解决方案
-
-      }
-  };`
+  javascript: ``,
+  python: ``,
+  java: ``,
+  cpp: ``
 };
 
 const EditorPage: React.FC = () => {
   const { problemId } = useParams<{ problemId: string }>();
-   const [searchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const roomId = searchParams.get('roomId');
 
   const isCollaborative = Boolean(roomId);
@@ -98,15 +83,14 @@ const EditorPage: React.FC = () => {
     setCode(CODE_TEMPLATES[language]);
   }, [problemId]); // 移除 language 和 setCode 依赖，避免循环
 
-
- useEffect(() => {
+  useEffect(() => {
     if (isCollaborative && roomId && !manager) {
       initCollaboration({
         roomId: roomId,
         userId: `user-${Math.random().toString(36).substring(2, 11)}`,
         username: `用户${Math.floor(Math.random() * 1000)}`,
         color: `#${Math.floor(Math.random() *
-  16777215).toString(16).padStart(6, '0')}`,
+          16777215).toString(16).padStart(6, '0')}`,
       })
     }
   }, [isCollaborative, roomId, manager, initCollaboration])
@@ -126,10 +110,8 @@ const EditorPage: React.FC = () => {
 
       // 模拟输出结果
       setOutput(`✅ 执行成功！
-
   输入: nums = [2,7,11,15], target = 9
   输出: [0,1]
-
   执行用时: 68 ms
   内存消耗: 15.2 MB`);
     } catch (error) {
@@ -140,6 +122,71 @@ const EditorPage: React.FC = () => {
       setIsRunning(false);
     }
   }
+  // const handleRunCode = async () => {
+  //   setIsRunning(true);
+  //   setOutput('');
+
+  //   try {
+  //     const result = await CodeExecutionAPI.runCode({
+  //       code,
+  //       language,
+  //       problemId
+  //     });
+
+  //     if (result.success) {
+  //       setOutput(`✅ 执行成功！
+
+  // 输出:
+  // ${result.output}
+
+  // 执行用时: ${result.executionTime}ms
+  // 内存消耗: ${result.memoryUsage}MB`);
+  //     } else {
+  //       setOutput(`❌ 执行失败！
+
+  // ${result.error}
+
+  // ${result.output ? `标准输出:\n${result.output}` : ''}`);
+  //     }
+  //   } catch (error) {
+  //     setOutput(`❌ 执行出错！
+
+  // ${error instanceof Error ? error.message : '未知错误'}`);
+  //   } finally {
+  //     setIsRunning(false);
+  //   }
+  // };
+
+  // const handleSubmitCode = async () => {
+  //   try {
+  //     setIsRunning(true);
+
+  //     const result = await CodeExecutionAPI.submitCode({
+  //       code,
+  //       language,
+  //       problemId,
+  //       testCases: problem?.examples.map(ex => ({
+  //         input: ex.input,
+  //         expectedOutput: ex.output
+  //       }))
+  //     });
+
+  //     if (result.success && result.testResults) {
+  //       const passed = result.testResults.filter(t => t.passed).length;
+  //       const total = result.testResults.length;
+
+  //       alert(`代码提交成功！\n\n通过测试用例: ${passed}/${total}\n执行用时:       
+  // ${result.executionTime}ms\n内存消耗: ${result.memoryUsage}MB`);
+  //     } else {
+  //       alert(`提交失败: ${result.error}`);
+  //     }
+  //   } catch (error) {
+  //     alert('提交失败: ' + (error instanceof Error ? error.message :
+  //       '未知错误'));
+  //   } finally {
+  //     setIsRunning(false);
+  //   }
+  // };
 
   const handleSubmitCode = async () => {
     //实现代码交互逻辑
@@ -188,7 +235,7 @@ const EditorPage: React.FC = () => {
               {problem.id}. {problem.title}
             </h1>
             <span className={`px-2 py-1 text-xs rounded-full ${problem.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
-                problem.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
+              problem.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'
               }`}>
               {problem.difficulty === 'easy' ? '简单' :
                 problem.difficulty === 'medium' ? '中等' : '困难'}

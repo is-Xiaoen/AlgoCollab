@@ -1176,7 +1176,103 @@ export const EditorToolbar: React.FC<EditorToolbarProps> = ({
   );
 };
 ```
+ 创建文件：src/services/codeExecutor.ts
+``` js
+  // src/services/api/codeExecutionApi.ts
+  import axios from 'axios';
+  import type { Language } from '../../pages/editor/components/EditorToolbar';     
 
+  const API_BASE_URL = import.meta.env.VITE_API_URL ||
+  'http://localhost:3000/api';
+
+  export interface CodeSubmission {
+    code: string;
+    language: Language;
+    problemId?: string;
+    testCases?: TestCase[];
+  }
+
+  export interface TestCase {
+    input: string;
+    expectedOutput: string;
+  }
+
+  export interface ExecutionResponse {
+    success: boolean;
+    output: string;
+    error?: string;
+    executionTime?: number;
+    memoryUsage?: number;
+    testResults?: TestResult[];
+  }
+
+  export interface TestResult {
+    passed: boolean;
+    input: string;
+    expectedOutput: string;
+    actualOutput: string;
+    executionTime?: number;
+  }
+
+  export class CodeExecutionAPI {
+    /**
+     * 运行代码（不评测）
+     */
+    static async runCode(submission: CodeSubmission):
+  Promise<ExecutionResponse> {
+      try {
+        const response = await axios.post(`${API_BASE_URL}/code/run`,
+  submission, {
+          timeout: 30000 // 30秒超时
+        });
+        return response.data;
+      } catch (error) {
+        throw this.handleError(error);
+      }
+    }
+
+    /**
+     * 提交代码（评测）
+     */
+    static async submitCode(submission: CodeSubmission):
+  Promise<ExecutionResponse> {
+      try {
+        const response = await axios.post(`${API_BASE_URL}/code/submit`,
+  submission, {
+          timeout: 60000 // 60秒超时
+        });
+        return response.data;
+      } catch (error) {
+        throw this.handleError(error);
+      }
+    }
+
+    /**
+     * 获取执行状态（轮询）
+     */
+    static async getExecutionStatus(executionId: string):
+  Promise<ExecutionResponse> {
+      try {
+        const response = await
+  axios.get(`${API_BASE_URL}/code/status/${executionId}`);
+        return response.data;
+      } catch (error) {
+        throw this.handleError(error);
+      }
+    }
+
+    private static handleError(error: any): Error {
+      if (axios.isAxiosError(error)) {
+        if (error.response) {
+          return new Error(error.response.data.message || '服务器错误');
+        } else if (error.request) {
+          return new Error('网络错误，请检查连接');
+        }
+      }
+      return error instanceof Error ? error : new Error('未知错误');
+    }
+  }
+  ```
 ## 9. WebSocket通信
 
 ### 9.1 WebSocket管理器

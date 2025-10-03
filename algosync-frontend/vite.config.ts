@@ -15,7 +15,7 @@ export default defineConfig({
     port: 5173, // 前端开发服务器端口
     proxy: {
       '/api': {
-        target: 'https://29c3064431b1.ngrok-free.app',
+        target: 'http://67ee6e5b.r20.vip.cpolar.cn',
         changeOrigin: true,
       }
     }
