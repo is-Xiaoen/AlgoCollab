@@ -20,8 +20,15 @@ importers:
       yjs:
         specifier: ^13.6.27
         version: 13.6.27
+    devDependencies:
+      '@types/node':
+        specifier: ^24.6.2
+        version: 24.6.2
 
 packages:
+
+  '@types/node@24.6.2':
+    resolution: {integrity: sha512-d2L25Y4j+W3ZlNAeMKcy7yDsK425ibcAOO2t7aPTz6gNMH0z2GThtwENCDc0d/Pw9wgyRqE5Px1wkV7naz8ang==}
 
   '@types/trusted-types@1.0.6':
     resolution: {integrity: sha512-230RC8sFeHoT6sSUlRO6a8cAnclO06eeiq1QDfiv2FGCLWFvvERWgwIQD4FWqD9A69BN7Lzee4OXwoMVnnsWDw==}
@@ -130,6 +137,9 @@ packages:
   proxy-from-env@1.1.0:
     resolution: {integrity: sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==}
 
+  undici-types@7.13.0:
+    resolution: {integrity: sha512-Ov2Rr9Sx+fRgagJ5AX0qvItZG/JKKoBRAVITs1zk7IqZGTJUwgUr7qoYBpWwakpWilTZFM98rG/AFRocu10iIQ==}
+
   y-monaco@0.1.6:
     resolution: {integrity: sha512-sYRywMmcylt+Nupl+11AvizD2am06ST8lkVbUXuaEmrtV6Tf+TD4rsEm6u9YGGowYue+Vfg1IJ97SUP2J+PVXg==}
     engines: {node: '>=12.0.0', npm: '>=6.0.0'}
@@ -154,6 +164,10 @@ packages:
     engines: {node: '>=16.0.0', npm: '>=8.0.0'}
 
 snapshots:
+
+  '@types/node@24.6.2':
+    dependencies:
+      undici-types: 7.13.0
 
   '@types/trusted-types@1.0.6': {}
 
@@ -260,6 +274,8 @@ snapshots:
       '@types/trusted-types': 1.0.6
 
   proxy-from-env@1.1.0: {}
+
+  undici-types@7.13.0: {}
 
   y-monaco@0.1.6(monaco-editor@0.53.0)(yjs@13.6.27):
     dependencies:

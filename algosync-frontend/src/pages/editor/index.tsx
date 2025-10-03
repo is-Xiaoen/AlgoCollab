@@ -54,10 +54,8 @@ const EditorPage: React.FC = () => {
       description: `给定一个整数数组 nums 和一个整数目标值
   target，请你在该数组中找出 和为目标值 target 的那 两个
   整数，并返回它们的数组下标。
-
   你可以假设每种输入只会对应一个答案。但是，数组中同一个元素在答案里不能重复出     
   现。
-
   你可以按任意顺序返回答案。`,
       examples: [
         {
@@ -219,7 +217,6 @@ const EditorPage: React.FC = () => {
   ];
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      {/* 顶部导航栏 */}
       <div className="bg-white border-b px-4 py-3">
         <Breadcrumb items={breadcrumbItems} className="mb-3" />
         <div className="flex items-center justify-between">
@@ -272,12 +269,12 @@ const EditorPage: React.FC = () => {
       </div>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* 题目面板 */}
+        {/* 题目 */}
         <div className="w-1/3 border-r bg-white">
           <ProblemPanel problem={problem} />
         </div>
 
-        {/* 编辑器面板 */}
+        {/* 编辑器 */}
         <div className={`${isCollaborative ? 'w-1/2' : 'w-2/3'} flex
   flex-col`}>
           <CodeEditor
@@ -286,7 +283,7 @@ const EditorPage: React.FC = () => {
             onExecute={handleRunCode}
           />
 
-          {/* 输出面板 */}
+          {/* 输出 */}
           {output && (
             <div className="border-t bg-gray-900 text-gray-100 p-4
   overflow-auto" style={{ maxHeight: '200px' }}>
@@ -304,7 +301,7 @@ const EditorPage: React.FC = () => {
             </div>
           )}
         </div>
-        {/* 聊天面板（协作模式） */}
+        {/* 聊天（协作模式） */}
         {isCollaborative && (
           <div className="w-1/3 border-l bg-white">
             <ChatPanel roomId={roomId!} />
