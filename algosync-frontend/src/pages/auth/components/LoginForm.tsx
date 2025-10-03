@@ -8,7 +8,6 @@ interface LoginFormProps {
   onSubmit?: (data: LoginFormData) => Promise<void>;
   onForgotPassword?: () => void;
 }
-
 const LoginForm: React.FC<LoginFormProps> = ({ 
   onSubmit,
   onForgotPassword 
@@ -17,12 +16,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
     email: '',
     password: '',
   });
-
-  // 错误信息状态
   const [errors, setErrors] = useState<Partial<Record<keyof LoginFormData, string>>>({});
   const [touched, setTouched] = useState<Partial<Record<keyof LoginFormData, boolean>>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
   const resetForm = () => {
     setFormData({
       email: '',
@@ -31,7 +27,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
     setErrors({});
     setTouched({});
   };
-
   // handleChange - 处理表单字段更新
   const handleChange = (field: keyof LoginFormData) => (
     e: React.ChangeEvent<HTMLInputElement>
@@ -50,13 +45,11 @@ const LoginForm: React.FC<LoginFormProps> = ({
       });
     }
   };
-
   const handleBlur = (field: keyof LoginFormData) => () => {
     setTouched(prev => ({
       ...prev,
       [field]: true
     }));
-
     try {
       const fieldSchema = loginSchema.pick({ [field]: true });
       fieldSchema.parse({ [field]: formData[field] });
@@ -77,7 +70,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
       }
     }
   };
-  
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
@@ -90,7 +82,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
       resetForm(); 
       setTouched({}); 
       setFormData(prev => ({ ...prev, password: '' }));
-      
     } catch (error: any) {
       if (error.errors && error.errors.length > 0) {
         const fieldErrors: Partial<Record<keyof LoginFormData, string>> = {};
@@ -169,7 +160,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
         <span className="sr-only">
           {isSubmitting ? '正在登录，请稍候' : '点击登录'}
         </span>
-    
         <span 
           className={`
             absolute inset-0 bg-white opacity-0
@@ -177,7 +167,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
             transition-opacity duration-300
           `}
         />
-        
         <span className="relative flex items-center justify-center">
           {isSubmitting ? (
             <>
@@ -202,7 +191,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
-              
               <span className="animate-pulse">
                 登录中
                 <span className="inline-flex">
@@ -232,7 +220,6 @@ const LoginForm: React.FC<LoginFormProps> = ({
               <span className="font-semibold tracking-wide">
                 登录
               </span>
-              
               <svg 
                 className="w-0 h-5 ml-0 opacity-0 group-hover:w-5 group-hover:ml-2 group-hover:opacity-100 transition-all duration-200" 
                 fill="none" 

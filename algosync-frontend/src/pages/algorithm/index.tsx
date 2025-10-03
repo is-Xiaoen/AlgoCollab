@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import Breadcrumb from '../../components/common/Breadcrumb';
 
 type Difficulty = 'easy' | 'medium' | 'hard';
-type Category = 'all' | 'array' | 'string' | 'tree' | 'dp' | 'graph';
+// type Category = 'all' | 'array' | 'string' | 'tree' | 'dp' | 'graph';
 
 interface Problem {
   id: number;
@@ -14,8 +16,8 @@ interface Problem {
 }
 
 const AlgorithmPage: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedDifficulty, setSelectedDifficulty] = useState<Difficulty | 'all'>('all');
-  const [selectedCategory, setSelectedCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
 
   const problems: Problem[] = [
@@ -74,15 +76,24 @@ const AlgorithmPage: React.FC = () => {
     }
   };
 
-  // TODO(human): 实现题目筛选逻辑
-  const filterProblems = (problems: Problem[]) => {
-    // 用户需要实现根据难度、分类和搜索关键词筛选题目的逻辑
-    return problems;
+  // const filterProblems = (problems: Problem[]) => {
+  //   // 用户需要实现根据难度、分类和搜索关键词筛选题目的逻辑 
+  //   return problems;
+  // };
+
+  const handleStartPractice = (problemId: number) => {
+    navigate(`/editor/${problemId}`);
   };
+
+  const breadcrumbItems = [
+    { label: '首页', href: '/home' },
+    { label: '算法题库', active: true }
+  ];
 
   return (
     <div className="space-y-6">
-      {/* Header with Search and Filters */}
+      <Breadcrumb items={breadcrumbItems} className="mb-4" />
+      
       <div className="bg-white rounded-xl shadow-sm border p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
@@ -90,7 +101,6 @@ const AlgorithmPage: React.FC = () => {
             <p className="text-gray-600 mt-1">挑战自我，提升编程能力</p>
           </div>
           
-          {/* Search Bar */}
           <div className="flex-1 max-w-md">
             <div className="relative">
               <input
@@ -107,7 +117,6 @@ const AlgorithmPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Filter Tabs */}
         <div className="mt-6 flex flex-wrap gap-2">
           <div className="flex items-center space-x-2">
             <span className="text-sm text-gray-600">难度：</span>
@@ -130,7 +139,6 @@ const AlgorithmPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Progress Overview */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white rounded-xl shadow-sm border p-4">
           <div className="flex items-center justify-between">
@@ -171,7 +179,6 @@ const AlgorithmPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Problems List */}
       <div className="bg-white rounded-xl shadow-sm border">
         <div className="p-6">
           <div className="overflow-x-auto">
@@ -218,7 +225,10 @@ const AlgorithmPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-4">
-                      <button className="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                      <button 
+                        onClick={() => handleStartPractice(problem.id)}
+                        className="text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
+                      >
                         开始练习
                       </button>
                     </td>

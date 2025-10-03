@@ -20,7 +20,6 @@ interface AuthTabsProps {
   showTooltips?: boolean; // 是否显示工具提示
 }
 
-// SVG 图标组件
 const LoginIcon: React.FC<{ className?: string }> = ({ className }) => (
   <svg className={className} fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
     <path fillRule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clipRule="evenodd" />
@@ -77,7 +76,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
     }
   }, []);
 
-  // Tab 配置 - 支持多种图标类型
   const tabs: { 
     key: TabType; 
     label: string; 
@@ -116,7 +114,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
     const currentIndex = tabs.findIndex(tab => tab.key === activeTab);
     let newIndex = currentIndex;
-  
     if (e.key === 'ArrowLeft') {
       e.preventDefault(); 
       newIndex = currentIndex === 0 ? tabs.length - 1 : currentIndex - 1;
@@ -125,16 +122,13 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
         newIndex = newIndex === 0 ? tabs.length - 1 : newIndex - 1;
       }
     }
-    
     else if (e.key === 'ArrowRight') {
       e.preventDefault();
       newIndex = currentIndex === tabs.length - 1 ? 0 : currentIndex + 1;
-      
       while (disabledTabs.includes(tabs[newIndex].key) && newIndex !== currentIndex) {
         newIndex = newIndex === tabs.length - 1 ? 0 : newIndex + 1;
       }
     }
-    
     else if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       const target = e.target as HTMLElement;
@@ -144,7 +138,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
         return;
       }
     }
-    
     if (newIndex !== currentIndex && !disabledTabs.includes(tabs[newIndex].key)) {
       const newTab = tabs[newIndex].key;
       handleTabChange(newTab);
@@ -155,7 +148,6 @@ const AuthTabs: React.FC<AuthTabsProps> = ({
       }, 0);
     }
   }, [activeTab, tabs, handleTabChange, disabledTabs]);
-
   //初始化和响应式更新指示器位置
   useEffect(() => {
     updateIndicatorPosition(activeTab);

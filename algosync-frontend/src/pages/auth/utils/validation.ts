@@ -23,13 +23,11 @@ const usernameSchema = z
   .max(20, '用户名最多20个字符')
   .regex(/^[a-zA-Z0-9_]+$/, '用户名只能包含字母、数字和下划线');
 
-// 登录表单验证schema
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1, '密码不能为空'),
 });
 
-// 注册表单验证schema
 export const registerSchema = z.object({
   username: usernameSchema,
   email: emailSchema,

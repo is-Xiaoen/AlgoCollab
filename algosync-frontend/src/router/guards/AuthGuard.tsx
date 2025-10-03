@@ -10,9 +10,6 @@ interface AuthGuardProps {
 
 /**
  * 路由守卫组件
- * @param children - 子组件
- * @param requireAuth - 是否需要认证（默认 true）
- * @param redirectTo - 重定向路径（默认 /login）
  */
 const AuthGuard: React.FC<AuthGuardProps> = ({ 
   children, 
@@ -20,12 +17,8 @@ const AuthGuard: React.FC<AuthGuardProps> = ({
   redirectTo = '/login' 
 }) => {
   const location = useLocation();
-  const { isAuthenticated, isLoading, checkAuth } = useAuthStore();
-  
-  useEffect(() => {
-    // 组件挂载时检查认证状态
-    checkAuth();
-  }, [checkAuth]);
+  const { isAuthenticated, isLoading } = useAuthStore();
+ 
   
   // 加载中状态
   if (isLoading) {
